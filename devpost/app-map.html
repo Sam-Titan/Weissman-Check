@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Weissman Check App Map</title>
+<style>
+  :root { --bg:#f5fbff; --ink:#14123b; --card:#fff; --accent:#2a2fc4; --sun:#ffd93d; --muted:#4a4870; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#14123b; --ink:#f5fbff; --card:#1f1d55; --accent:#8fa0ff; --sun:#ffd93d; --muted:#b9b7e0; } }
+  body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.55 system-ui, sans-serif; }
+  main { max-width: 820px; margin: 0 auto; padding: 24px 16px 56px; }
+  h1 { font-size: 1.8rem; margin: 0 0 4px; }
+  h2 { margin: 32px 0 8px; font-size: 1.2rem; }
+  .card { background:var(--card); border:2px solid var(--ink); border-radius:8px; padding:12px 16px; box-shadow:4px 4px 0 var(--ink); margin:12px 0; }
+  code { font-family: ui-monospace, monospace; font-size: .9em; background: rgba(127,127,127,.18); padding: 1px 4px; border-radius: 3px; }
+  .muted { color: var(--muted); }
+  ol.flow { list-style:none; padding:0; display:grid; gap:8px; }
+  ol.flow li { border:2px solid var(--ink); border-radius:8px; padding:8px 12px; background:var(--card); }
+  ol.flow li b { color: var(--accent); }
+  ol.flow li + li::before { content:"↓"; display:block; margin:-4px 0 4px; color:var(--muted); }
+  summary { cursor:pointer; font-weight:700; }
+  summary:focus-visible, a:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+</style>
+</head>
+<body>
+<main>
+<h1>Weissman Check: app map</h1>
+<p class="muted">Snapshot of commit <code>152ce95</code>. Code moves on, so search for the names below if a path has shifted.</p>
+
+<h2>What it is</h2>
+<p>You drop in a file. Six real lossless compressors (gzip, brotli, zstd, lz4, xz, bzip2, each at a fast and a strong setting) run on it, and the app tells you which one to ship, for static files or dynamic responses, at an assumed 20 Mbit/s network. It also shows a scorecard, a delivery-time chart, a Weissman score you can "break", and a replay of how LZ-style compressors find repeats. Already-compressed files (docx, zip, png…) get an "Already compressed" verdict.</p>
+<p>Three pieces: a <b>React frontend</b> (<code>frontend/src</code>), a <b>FastAPI backend</b> that runs the compressors (<code>backend/app</code>), and the <b>decision logic</b> in one pure file (<code>backend/app/analysis.py</code>).</p>
+
+<h2>One action: clicking Run</h2>
+<ol class="flow">
+  <li><b>Click Run</b> in the browser: <code>run()</code> in <code>frontend/src/App.tsx</code></li>
+  <li><b>Upload and listen</b>: <code>createRun</code> and <code>openEvents</code> in <code>frontend/src/api.ts</code></li>
+  <li><b>Time real compressors</b>: <code>work()</code> in <code>backend/app/main.py</code> calls <code>run_benchmark</code> and <code>timed_median</code> in <code>backend/app/benchmark.py</code></li>
+  <li><b>Decide</b>: <code>analyse()</code> in <code>backend/app/analysis.py</code></li>
+  <li><b>Show</b>: the <code>done</code> event sets the analysis, and <code>RecommendationBanner</code>, the scorecard, table and chart render it</li>
+</ol>
+
+<h2>Reference route (3 stops)</h2>
+<div class="card">
+  <p><b>1. The click becomes a request.</b> <code>frontend/src/App.tsx</code>, search <code>async function run</code>. It calls <code>createRun</code> (upload) then <code>openEvents</code> (stream). <code>result</code> events fill the progress bar; <code>done</code> carries the full analysis and switches to results.</p>
+  <p><b>2. Real compressors, timed.</b> <code>backend/app/main.py</code>, search <code>def work</code>; then <code>backend/app/benchmark.py</code>, <code>timed_median</code>, which repeats each compress and decompress and keeps the median so one noisy run cannot decide the answer.</p>
+  <p><b>3. Where the answer is decided.</b> <code>backend/app/analysis.py</code>: <code>static_time</code> (transfer + decompress) versus <code>dynamic_time</code> (adds compress time) is the whole Static/Dynamic toggle. <code>_recommend</code> picks the winner and the near-tie. <code>weissman_cell</code> scores a row against a baseline. <code>_already_compressed</code> sets the packed-file verdict.</p>
+</div>
+
+<h2>To change this, start here</h2>
+<ul>
+  <li><b>The assumed network speed:</b> <code>NETWORK_MBPS</code> in <code>backend/app/analysis.py</code> (restart the backend).</li>
+  <li><b>Which compressors and levels run:</b> the codec table in <code>backend/app/benchmark.py</code> (<code>_zstd</code>, <code>_gzip</code>, <code>_brotli</code>…) and <code>frontend/src/lib/compressors.ts</code> for colours.</li>
+  <li><b>The "already compressed" rules:</b> <code>PACKED_ENTROPY_BITS</code>, <code>PACKED_MAGIC</code>, <code>PACKED_EXTENSIONS</code> in <code>analysis.py</code>.</li>
+  <li><b>How the banner words the verdict:</b> <code>frontend/src/components/RecommendationBanner.tsx</code>.</li>
+  <li><b>Look and feel:</b> <code>frontend/src/styles.css</code> and <code>frontend/src/components/Window.tsx</code>.</li>
+  <li><b>The replay card's matching:</b> <code>frontend/src/lib/lz77.ts</code>.</li>
+</ul>
+
+<h2>A practice to reuse</h2>
+<div class="card">
+  <p><b>Pin down one observable example before building, and keep the decision logic separate from I/O.</b></p>
+  <p>Here the spec's worked example (1,000,000 bytes at 20 Mbit/s, where brotli strong wins static and zstd fast wins dynamic) became <code>test_worked_example_flips_between_static_and_dynamic</code> in <code>backend/tests/test_recommend.py</code>. Because <code>analysis.py</code> is pure functions with no file or network access, new rules like the near-tie, "too small to matter" and "already compressed" each got a small test (<code>test_packed.py</code>) without starting a server. On another project, write the one concrete input and expected output first, then ask the agent to make it pass.</p>
+</div>
+
+<details class="card">
+  <summary>Run it again</summary>
+  <p>From the project root: <code>just dev</code> (backend on port 8000, frontend on 5173). Checks: <code>just test</code> and <code>just check</code>.</p>
+</details>
+</main>
+</body>
+</html>

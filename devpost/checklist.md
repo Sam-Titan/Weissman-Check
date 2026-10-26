@@ -91,25 +91,25 @@ Build mode: fast
 
 ## Hands-on Checkpoints
 
-- [ ] Early usable behavior explored — after slice 2 (real results plus the static/dynamic flip)
+- [x] Early usable behavior explored — after slice 2 (real results plus the static/dynamic flip)
 - [x] Core journey explored — after slice 5 (kernel complete: real results, banner, replay, Weissman)
-- [ ] Final kick-the-tires exploration and feedback completed
+- [x] Final kick-the-tires exploration and feedback completed
 
 ## Final Review
 
-- [ ] Final review complete — feedback resolved and learner confirms ready to ship
+- [x] Final review complete — feedback resolved and learner confirms ready to ship
 
 ## Code Tour and App Map
 
-- [ ] Learning activity complete — guided route, focused alternative, prior practice connected, or brief recap
-- [ ] Optional edit and transfer reflection addressed — offered/declined/already covered/not applicable as appropriate
-- [ ] `devpost/app-map.html` generated from finished code, checked, and shown, including a project-grounded practice to reuse
+- [x] Learning activity complete — guided route, focused alternative, prior practice connected, or brief recap
+- [x] Optional edit and transfer reflection addressed — offered/declined/already covered/not applicable as appropriate
+- [x] `devpost/app-map.html` generated from finished code, checked, and shown, including a project-grounded practice to reuse
 
-Activity and evidence: [not started]
-Route and stops: [not started]
-Edit outcome: [not started]
-Reflection: [not started]
-Activity mode: [not started]
+Activity and evidence: Guided route following one Run click; the learner reported it matched what they expected.
+Route and stops: `frontend/src/App.tsx` `run()` → `frontend/src/api.ts` `createRun`/`openEvents` → `backend/app/main.py` `work()` → `backend/app/benchmark.py` `timed_median` → `backend/app/analysis.py` `static_time`/`dynamic_time`/`_recommend`/`_already_compressed`; all stops walked through.
+Edit outcome: Offered (`NETWORK_MBPS`); the learner did not report trying it, so none kept.
+Reflection: Offered; not answered.
+Activity mode: Guided route in the live app and editor; map is `devpost/app-map.html` (snapshot of commit 152ce95).
 
 ## Revisions
 - Large-file worst case kept at current levels — measured a 24 MB log at about 175 s total (brotli 11: 86 s, xz 9: 35 s, zstd 19: 32 s), so the >8 MB hint will say it can take a few minutes rather than a minute; the lower-strong-level fallback is not needed.
