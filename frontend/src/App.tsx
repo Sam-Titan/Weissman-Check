@@ -3,6 +3,7 @@ import { createRun, fetchSample, openEvents } from "./api";
 import { BROWSER_SUPPORTED, COLORS, COMPRESSORS, type CompressorName } from "./lib/compressors";
 import { formatSize, formatTime } from "./lib/format";
 import MetricsBox from "./components/MetricsBox";
+import ReplayCard, { REPLAY_BYTES } from "./components/ReplayCard";
 import ProgressBar from "./components/ProgressBar";
 import RecommendationBanner from "./components/RecommendationBanner";
 import Help, { TooltipProvider } from "./components/Tooltip";
@@ -24,6 +25,8 @@ export default function App() {
   const [analysis, setAnalysis] = useState<Analysis | null>(null);
   const [mode, setMode] = useState<Mode>("static");
   const [active, setActive] = useState<string | null>(null);
+  const [preview, setPreview] = useState<{ text: string; bytes: number } | null>(null);
+  const [runId, setRunId] = useState(0);
   const closeRef = useRef<() => void>(() => {});
 
   async function runSample(name: string) {
@@ -35,6 +38,8 @@ export default function App() {
     setStatus("running");
     try {
       const file = await fetchSample(name);
+      setPreview({ text: await file.slice(0, REPLAY_BYTES).text(), bytes: file.size });
+      setRunId((n) => n + 1);
       const runId = await createRun(file, [...COMPRESSORS]);
       closeRef.current = openEvents(runId, {
         result: (r) => setResults((prev) => [...prev, r]),
@@ -124,7 +129,15 @@ export default function App() {
               </>
             )}
           </div>
-          {status !== "done" && <MetricsBox latest={busy ? latest : null} />}
+          <div className="min-w-0 space-y-6">
+            <ReplayCard
+              text={preview?.text ?? null}
+              fileBytes={preview?.bytes ?? 0}
+              runId={runId}
+              tall={status === "done"}
+            />
+            {status !== "done" && <MetricsBox latest={busy ? latest : null} />}
+          </div>
         </div>
       </main>
     </TooltipProvider>

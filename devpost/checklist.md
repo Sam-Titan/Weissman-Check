@@ -39,7 +39,7 @@ Build mode: fast
   Learner check: Click a sample and Run; watch the bar fill, and say whether it feels right.
   Commit: `Add live segmented progress bar and metrics box`
 
-- [ ] **4. Replay card: see the repeats in your file**
+- [x] **4. Replay card: see the repeats in your file**
   Becomes usable: The replay card sweeps the first 8 KB of the file, highlights each repeated string with its "repeat of N chars from D back" label, and counts bytes saved; Stop and Restart work; it starts with Run and becomes the tall card after results.
   Why now: This is the unique kernel (seeing why, not just which), so it lands early, right after the real numbers exist.
   PRD ref: `prd.md > Replay card — "How compressors see your file"`

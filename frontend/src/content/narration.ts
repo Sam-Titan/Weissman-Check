@@ -7,3 +7,6 @@ export const METRIC_TIPS = {
 } as const;
 
 export type MetricKey = keyof typeof METRIC_TIPS;
+
+export const NARRATOR_INTRO =
+  "Hi, I'm your narrator. Drop in a text-like file, or pick a sample, and I'll run six real compressors on it and show you which one to ship. Here you'll also see how LZ-style compressors spot repeated text.";
