@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Weissman Check Spec</title>
+<style>
+:root{--bg:#f7f8fa;--card:#fff;--bd:#e3e7ed;--tx:#1d2733;--mut:#5d6b7c;--ac:#1e88ff;--gz:#2f80ed;--br:#f2994a;--zs:#1abc9c;--lz:#f2c94c;--xz:#9b51e0;--bz:#eb5c9a}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.55 Lato,"Segoe UI",system-ui,sans-serif}
+main{max-width:920px;margin:0 auto;padding:24px 16px 64px}
+h1{font-size:2rem;margin:.2em 0}h2{margin:2em 0 .5em;font-size:1.35rem}
+code,pre,.mono{font-family:"Source Code Pro",ui-monospace,Menlo,monospace;font-size:.88em}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:16px 18px;margin:12px 0}
+.badge{display:inline-block;background:var(--ac);color:#fff;border-radius:99px;padding:2px 10px;font-size:.8rem}
+.mut{color:var(--mut)}
+svg{width:100%;height:auto}
+svg text{font-family:inherit;fill:var(--tx)}
+.steps{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.steps button{border:1px solid var(--bd);background:#fff;border-radius:8px;padding:6px 12px;cursor:pointer;font:inherit}
+.steps button.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+#stepbody{min-height:90px}
+details{background:var(--card);border:1px solid var(--bd);border-radius:10px;margin:8px 0;padding:10px 16px}
+summary{cursor:pointer;font-weight:700}
+table{border-collapse:collapse;width:100%;font-size:.92rem}
+td,th{border-bottom:1px solid var(--bd);padding:6px 8px;text-align:left}
+.sw{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.tog{display:inline-flex;border:1px solid var(--bd);border-radius:8px;overflow:hidden}
+.tog button{border:0;background:#fff;padding:6px 14px;cursor:pointer;font:inherit}
+.tog button.on{background:var(--ac);color:#fff}
+.banner{background:var(--ac);color:#fff;border-radius:10px;padding:12px 16px;margin:8px 0}
+pre{background:#f0f3f7;border-radius:8px;padding:10px;overflow:auto}
+</style>
+</head>
+<body>
+<main>
+<span class="badge">approved</span>
+<h1>Weissman Check — Technical Spec</h1>
+<p class="mut">Markdown (<code>devpost/spec.md</code>) is canonical; this page is a visual companion and works offline.</p>
+
+<h2>How it works</h2>
+<div class="card">
+<p><b>Browser app</b> (React + TypeScript): everything you see, plus the instant explaining work: text check, entropy verdict, replay of the first ~8 KB, and the formulas.</p>
+<p><b>Python server</b> (FastAPI): runs the six real compressors at fast and strong settings, times each (median within a time budget), keeps compressed bytes in memory for downloads, streams each finished run, and computes <b>all</b> the maths once: the static, dynamic and browser-best winners and 9 Weissman tables (3 units × 3 baselines). The browser only switches which precomputed value is shown.</p>
+<p class="mut">Nothing is saved. No accounts, no database.</p>
+</div>
+
+<h2>Architecture and data flow</h2>
+<div class="card">
+<svg viewBox="0 0 860 330" role="img" aria-label="Browser and server data flow">
+<defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#5d6b7c"/></marker></defs>
+<rect x="10" y="10" width="360" height="310" rx="12" fill="#fff" stroke="#e3e7ed"/>
+<text x="26" y="36" font-weight="700">Browser (React/TS)</text>
+<rect x="30" y="52" width="320" height="42" rx="8" fill="#eef5ff" stroke="#1e88ff"/><text x="44" y="78" font-size="14">Dropbox · validate · entropy · preview</text>
+<rect x="30" y="106" width="320" height="42" rx="8" fill="#eef5ff" stroke="#1e88ff"/><text x="44" y="132" font-size="14">Carousel · include checkboxes · narration</text>
+<rect x="30" y="160" width="320" height="42" rx="8" fill="#eef5ff" stroke="#1e88ff"/><text x="44" y="186" font-size="14">Progress bar (12) · metrics · replay (8 KB)</text>
+<rect x="30" y="214" width="320" height="42" rx="8" fill="#eef5ff" stroke="#1e88ff"/><text x="44" y="240" font-size="14">Results · toggle · break-it (show only)</text>
+<text x="30" y="290" font-size="12" class="mut">state: one useReducer, lost on refresh</text>
+<rect x="490" y="10" width="360" height="310" rx="12" fill="#fff" stroke="#e3e7ed"/>
+<text x="506" y="36" font-weight="700">Server (FastAPI, Python)</text>
+<rect x="510" y="52" width="320" height="42" rx="8" fill="#e8faf6" stroke="#1abc9c"/><text x="524" y="78" font-size="14">API routes · one run at a time</text>
+<rect x="510" y="106" width="320" height="42" rx="8" fill="#e8faf6" stroke="#1abc9c"/><text x="524" y="132" font-size="14">Benchmark engine · median of N repeats</text>
+<rect x="510" y="160" width="320" height="42" rx="8" fill="#e8faf6" stroke="#1abc9c"/><text x="524" y="186" font-size="14">gzip · brotli · zstd · lz4 · xz · bzip2</text>
+<rect x="510" y="214" width="320" height="42" rx="8" fill="#e8faf6" stroke="#1abc9c"/><text x="524" y="240" font-size="14">analysis.py · run store · samples</text>
+<line x1="372" y1="73" x2="488" y2="73" stroke="#5d6b7c" marker-end="url(#a)"/><text x="384" y="66" font-size="11">POST /api/runs</text>
+<line x1="488" y1="140" x2="372" y2="140" stroke="#5d6b7c" marker-end="url(#a)"/><text x="384" y="133" font-size="11">SSE: result ×N, done</text>
+<line x1="372" y1="200" x2="488" y2="200" stroke="#5d6b7c" marker-end="url(#a)"/><text x="384" y="193" font-size="11">GET download</text>
+<line x1="488" y1="235" x2="372" y2="235" stroke="#5d6b7c" marker-end="url(#a)"/><text x="384" y="228" font-size="11">samples, bytes</text>
+</svg>
+</div>
+
+<h2>Core journey, step by step</h2>
+<div class="card">
+<div class="steps" id="steps" role="tablist"></div>
+<div id="stepbody"></div>
+<noscript><p>Enable JavaScript to step through, or read <code>spec.md &gt; The Core Journey Through the System</code>.</p></noscript>
+</div>
+
+<h2>Why the winner flips (try it)</h2>
+<div class="card">
+<p class="mut">Illustrative numbers from the spec: 1,000,000-byte file at 20 Mbit/s.</p>
+<div class="tog" id="tog"><button data-m="static" class="on">Static</button><button data-m="dynamic">Dynamic</button></div>
+<div class="banner" id="ban"></div>
+<table>
+<tr><th>Run</th><th>size</th><th>compress</th><th>decompress</th><th>transfer</th><th>static</th><th>dynamic</th></tr>
+<tr><td><span class="sw" style="background:var(--zs)"></span>zstd (fast)</td><td>230,000</td><td>0.012 s</td><td>0.004 s</td><td>0.092 s</td><td>0.096 s</td><td>0.108 s</td></tr>
+<tr><td><span class="sw" style="background:var(--br)"></span>brotli (strong)</td><td>150,000</td><td>1.100 s</td><td>0.006 s</td><td>0.060 s</td><td>0.066 s</td><td>1.166 s</td></tr>
+</table>
+<pre>static  = transfer + decompress
+dynamic = compress + transfer + decompress
+transfer = bytes / (20 Mbit/s / 8)</pre>
+<p><b>Weissman</b> <code>W = (r/r̄) · (ln T̄ / ln T)</code>, zstd(fast) vs gzip-6 (210,000 B, 0.030 s):</p>
+<div class="tog" id="unit"><button data-u="s" class="on">seconds</button><button data-u="ms">milliseconds</button></div>
+<p id="wout" class="mono"></p>
+<p class="mut">Same data, different verdict. In seconds both times are under 1 s, so the score is <b>flagged</b>: faster compressors score lower. Exactly 1 unit, or mixed signs, shows <b>undefined</b>. Never NaN.</p>
+</div>
+
+<h2>Components (tap to open)</h2>
+<details><summary>Benchmark Engine <span class="mut">backend/app/benchmark.py</span></summary>
+<p>12 jobs (6 × fast/strong) plus hidden baselines (gzip 6, gzip 1, zstd 3). Median of 5/3/1 repeats by file size, round-trip check, per-job failure isolation. PRD: <code>The benchmark and progress bar</code>, <code>Results: table</code>.</p>
+<table><tr><th>Compressor</th><th>fast</th><th>strong</th></tr>
+<tr><td><span class="sw" style="background:var(--gz)"></span>gzip</td><td>1</td><td>9</td></tr>
+<tr><td><span class="sw" style="background:var(--br)"></span>brotli</td><td>q1</td><td>q11</td></tr>
+<tr><td><span class="sw" style="background:var(--zs)"></span>zstd</td><td>1</td><td>19</td></tr>
+<tr><td><span class="sw" style="background:var(--lz)"></span>lz4</td><td>0</td><td>12 (HC)</td></tr>
+<tr><td><span class="sw" style="background:var(--xz)"></span>xz</td><td>preset 1</td><td>preset 9</td></tr>
+<tr><td><span class="sw" style="background:var(--bz)"></span>bzip2</td><td>1</td><td>9</td></tr></table>
+<p>Timing: repeat within a 0.5 s budget (max 7), median; slow jobs run once.</p></details>
+<details><summary>API and Run Store <span class="mut">main.py, store.py</span></summary>
+<pre>POST /api/runs                 → 201 {run_id}   (409 busy, 413 &gt;25MB, 422 empty)
+GET  /api/runs/{id}/events     → SSE: result × N, done
+GET  /api/runs/{id}/download/{compressor}/{setting}
+GET  /api/samples/{name}</pre>
+<p>Runs live in memory, max 3, 10-minute expiry. PRD: <code>Non-Goals</code>.</p></details>
+<details><summary>Replay Card <span class="mut">ReplayCard.tsx, lib/lz77.ts</span></summary>
+<p>First 8 KB only (labelled). Greedy match finder, 3-byte hash, 4 KB window, min match 4. Counter adds length − 3 per match. Stop/Restart affect only the animation. PRD: <code>Replay card</code>.</p></details>
+<details><summary>Analysis (single source of truth) <span class="mut">backend/app/analysis.py</span></summary>
+<p>Sent with the <code>done</code> event. Assumed network 20 Mbit/s. Static/dynamic rule above. If the winner is lz4/xz/bzip2, banner also names the best of gzip/brotli/zstd. PRD: <code>Results: recommendation banner</code>.</p></details>
+<details><summary>Weissman and "break it" <span class="mut">analysis.py + WeissmanControl.tsx</span></summary>
+<p>Units s / ms / µs × baselines gzip 6 (default), gzip 1, zstd 3 = 9 precomputed tables. Edge cases: T ≤ 0, ln T = 0, ln T̄ = 0, opposite signs → <b>undefined</b>; both logs negative → <b>flagged</b>; each with a one-line note. PRD: <code>Results: Weissman "break it" control</code>.</p></details>
+<details><summary>Front-end screens <span class="mut">components/</span></summary>
+<p>Hero, NarratorBox, Dropbox, FileChip, CompressorCarousel, NarrationCard, ProgressBar, MetricsBox, ReplayCard, RecommendationBanner, ResultsTable, WeissmanControl, Tooltip. State: one <code>useReducer</code> in <code>App.tsx</code>.</p></details>
+
+<h2>Stack and running it</h2>
+<div class="card">
+<p>uv · FastAPI · Ruff · pytest · React/TS · Vite · pnpm · Tailwind v4 (custom theme) · Radix primitives · Motion · just. No Docker Compose, TanStack Query, Zustand, Router, Hey API, CI or Lefthook.</p>
+<pre>just setup
+just dev      # then open http://localhost:5173</pre>
+<p>Demo recording: Start → JSON sample → Run → flip static/dynamic → drag Weissman control → download.</p>
+</div>
+
+<h2>Open issues</h2>
+<div class="card"><ul>
+<li>Sample flip must be proven by <code>test_samples_flip.py</code>; tune the sample files or speed if it fails.</li>
+<li>Verify early: library installs, SSE through the Vite proxy, brotli-11/xz-9 time on 25 MB.</li>
+<li>Entropy thresholds 6.0 / 7.5 bits per byte; results table adds a bits-per-byte column.</li>
+<li>Early timing check on a 25 MB file must confirm the worst case is tolerable.</li>
+</ul></div>
+</main>
+<script>
+var S=[["1 Arrive","Hero page with the squeeze animation. Start opens the compressor page. No server call."],
+["2 Narrator","NarratorBox shows tour step 1 with Next / Skip tour."],
+["3 File","Drop a file or click a sample. Browser checks size, empty, text-likeness, computes the entropy verdict, shows the chip and an 8 KB preview. Samples come from GET /api/samples."],
+["4 Choose","Include checkboxes set which compressors run. Reading a card only changes the narration."],
+["5 Run","POST /api/runs returns a run_id; the browser opens the event stream and starts the replay."],
+["6 Watch","Each finished job arrives as an event: one progress segment fills and the metrics box updates."],
+["7 Answer","After done, the browser computes the recommendation and Weissman scores; results slide in; the replay card goes tall."],
+["8 Act","Toggle static/dynamic, download real bytes, drag the Weissman control, or Try another file (keeps checkboxes)."]];
+var b=document.getElementById("steps"),body=document.getElementById("stepbody");
+function show(i){[].forEach.call(b.children,function(c,j){c.className=j===i?"on":""});body.textContent=S[i][1]}
+S.forEach(function(s,i){var x=document.createElement("button");x.textContent=s[0];x.onclick=function(){show(i)};b.appendChild(x)});show(0);
+var mode="static",unit="s";
+function ban(){document.getElementById("ban").textContent=mode==="static"?"Ship brotli (strong) for static assets: 85% smaller, 0.066 s to the user at 20 Mbit/s":"Ship zstd (fast) for dynamic responses: 77% smaller, 0.108 s to the user at 20 Mbit/s"}
+function w(){var r=(1e6/230000)/(1e6/210000),f=unit==="s"?1:1000,v=r*Math.log(0.030*f)/Math.log(0.012*f);document.getElementById("wout").textContent="zstd(fast) vs gzip-6, in "+(unit==="s"?"seconds":"milliseconds")+": W = "+v.toFixed(2)}
+document.getElementById("tog").onclick=function(e){if(!e.target.dataset.m)return;mode=e.target.dataset.m;[].forEach.call(this.children,function(c){c.className=c===e.target?"on":""});ban()};
+document.getElementById("unit").onclick=function(e){if(!e.target.dataset.u)return;unit=e.target.dataset.u;[].forEach.call(this.children,function(c){c.className=c===e.target?"on":""});w()};
+ban();w();
+</script>
+</body>
+</html>
