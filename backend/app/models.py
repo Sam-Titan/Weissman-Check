@@ -44,6 +44,14 @@ class RowSummary(BaseModel):
 class ModeRecommendation(BaseModel):
     winner: RowSummary | None
     browser_best: RowSummary | None
+    near_tie: bool = False
+    runner_up: RowSummary | None = None
+    tie_reason: Literal["browser", "smaller"] | None = None
+
+
+class RowTimes(BaseModel):
+    static_s: float
+    dynamic_s: float
 
 
 class Recommendation(BaseModel):
@@ -53,4 +61,6 @@ class Recommendation(BaseModel):
 
 class Analysis(BaseModel):
     network_mbps: float
+    original_bytes: int
+    rows: dict[str, RowTimes]  # "compressor/setting" -> time to the user, both modes
     recommendation: Recommendation

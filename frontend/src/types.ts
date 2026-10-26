@@ -29,9 +29,19 @@ export interface RowSummary {
 export interface ModeRecommendation {
   winner: RowSummary | null;
   browser_best: RowSummary | null;
+  near_tie: boolean;
+  runner_up: RowSummary | null;
+  tie_reason: "browser" | "smaller" | null;
+}
+
+export interface RowTimes {
+  static_s: number;
+  dynamic_s: number;
 }
 
 export interface Analysis {
   network_mbps: number;
+  original_bytes: number;
+  rows: Record<string, RowTimes>;
   recommendation: Record<Mode, ModeRecommendation>;
 }
