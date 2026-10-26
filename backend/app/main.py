@@ -6,6 +6,7 @@ from typing import Annotated
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse, StreamingResponse
 
+from .analysis import analyse
 from .benchmark import BASELINE_KEYS, CODECS, COMPRESSORS, plan_jobs, run_benchmark
 from .models import JobId, RunCreated
 from .store import store
@@ -57,12 +58,14 @@ def run_events(run_id: str) -> StreamingResponse:
 
     def stream() -> Iterator[str]:
         run.running = True
+        results = []
         try:
             for result, out in run_benchmark(run.data, run.included):
+                results.append(result)
                 if out is not None:
                     run.outputs[(result.compressor, result.setting)] = out
                 yield _sse("result", result.model_dump())
-            yield _sse("done", {})
+            yield _sse("done", analyse(results).model_dump())
         finally:
             run.running = False
 

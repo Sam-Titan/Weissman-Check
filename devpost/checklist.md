@@ -19,7 +19,7 @@ Build mode: fast
   Learner check: Run `just dev`, open `http://localhost:5173`, click a sample, and watch rows appear one by one with real sizes and speeds.
   Commit: `Run real benchmarks on a sample and stream results into a table`
 
-- [ ] **2. Ship-this-one banner that flips static vs dynamic**
+- [x] **2. Ship-this-one banner that flips static vs dynamic**
   Becomes usable: After a run, a banner names the compressor to ship at the assumed 20 Mbit/s, with a static/dynamic toggle that can change the winner and a browser-best line when the winner is not browser-supported.
   Why now: This is the practical answer the whole app exists for, and it carries the flip risk: if no sample flips, the speed or samples must be tuned now.
   PRD ref: `prd.md > Results: recommendation banner`

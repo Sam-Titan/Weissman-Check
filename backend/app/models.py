@@ -29,3 +29,28 @@ class JobResult(BaseModel):
     repeats: int = 0
     is_baseline: bool = False
     error: str | None = None
+
+
+class RowSummary(BaseModel):
+    compressor: str
+    setting: Setting
+    level_label: str
+    compressed_bytes: int
+    percent_saved: float
+    decompress_mbps: float
+    delivery_s: float
+
+
+class ModeRecommendation(BaseModel):
+    winner: RowSummary | None
+    browser_best: RowSummary | None
+
+
+class Recommendation(BaseModel):
+    static: ModeRecommendation
+    dynamic: ModeRecommendation
+
+
+class Analysis(BaseModel):
+    network_mbps: float
+    recommendation: Recommendation

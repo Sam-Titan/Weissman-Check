@@ -1,7 +1,8 @@
 import { useRef, useState } from "react";
 import { createRun, fetchSample, openEvents } from "./api";
 import { BROWSER_SUPPORTED, COLORS, COMPRESSORS, type CompressorName } from "./lib/compressors";
-import type { JobResult } from "./types";
+import RecommendationBanner from "./components/RecommendationBanner";
+import type { Analysis, JobResult, Mode } from "./types";
 
 const SAMPLES = [
   { label: "JSON API response", file: "api-response.json" },
@@ -15,11 +16,14 @@ export default function App() {
   const [status, setStatus] = useState<Status>("idle");
   const [results, setResults] = useState<JobResult[]>([]);
   const [message, setMessage] = useState("");
+  const [analysis, setAnalysis] = useState<Analysis | null>(null);
+  const [mode, setMode] = useState<Mode>("static");
   const closeRef = useRef<() => void>(() => {});
 
   async function runSample(name: string) {
     if (status === "running") return;
     setResults([]);
+    setAnalysis(null);
     setMessage("");
     setStatus("running");
     try {
@@ -27,7 +31,10 @@ export default function App() {
       const runId = await createRun(file, [...COMPRESSORS]);
       closeRef.current = openEvents(runId, {
         result: (r) => setResults((prev) => [...prev, r]),
-        done: () => setStatus("done"),
+        done: (a) => {
+          setAnalysis(a);
+          setStatus("done");
+        },
         lost: () => {
           setMessage("Lost connection to the benchmark. Try again.");
           setStatus("error");
@@ -58,6 +65,7 @@ export default function App() {
       </div>
       {message && <p className="text-red-600">{message}</p>}
       {status === "running" && <p className="text-muted">Running… {rows.length} results in</p>}
+      {analysis && <RecommendationBanner analysis={analysis} mode={mode} onMode={setMode} />}
       {rows.length > 0 && (
         <table className="w-full rounded-xl border border-line bg-card text-left">
           <thead className="text-sm text-muted">

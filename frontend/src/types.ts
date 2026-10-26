@@ -13,3 +13,25 @@ export interface JobResult {
   is_baseline: boolean;
   error?: string | null;
 }
+
+export type Mode = "static" | "dynamic";
+
+export interface RowSummary {
+  compressor: string;
+  setting: Setting;
+  level_label: string;
+  compressed_bytes: number;
+  percent_saved: number;
+  decompress_mbps: number;
+  delivery_s: number;
+}
+
+export interface ModeRecommendation {
+  winner: RowSummary | null;
+  browser_best: RowSummary | null;
+}
+
+export interface Analysis {
+  network_mbps: number;
+  recommendation: Record<Mode, ModeRecommendation>;
+}

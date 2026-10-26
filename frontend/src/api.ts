@@ -1,4 +1,4 @@
-import type { JobResult } from "./types";
+import type { Analysis, JobResult } from "./types";
 
 export async function fetchSample(name: string): Promise<File> {
   const res = await fetch(`/api/samples/${name}`);
@@ -20,15 +20,15 @@ export async function createRun(file: File, compressors: string[]): Promise<stri
 
 export function openEvents(
   runId: string,
-  on: { result: (r: JobResult) => void; done: () => void; lost: () => void },
+  on: { result: (r: JobResult) => void; done: (analysis: Analysis) => void; lost: () => void },
 ): () => void {
   const source = new EventSource(`/api/runs/${runId}/events`);
   let finished = false;
   source.addEventListener("result", (e) => on.result(JSON.parse((e as MessageEvent).data)));
-  source.addEventListener("done", () => {
+  source.addEventListener("done", (e) => {
     finished = true;
     source.close();
-    on.done();
+    on.done(JSON.parse((e as MessageEvent).data));
   });
   source.onerror = () => {
     if (!finished) {
