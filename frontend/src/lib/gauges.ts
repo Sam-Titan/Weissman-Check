@@ -1,8 +1,8 @@
 import type { Zone } from "../components/Gauge";
 
-export const GOOD = "#3fb98a";
-export const MID = "#f2c14e";
-export const BAD = "#e0675a";
+export const GOOD = "#2fd47f";
+export const MID = "#ffd93d";
+export const BAD = "#ff5a5f";
 
 /** Position of v on a log scale between lo and hi, 0 to 1. */
 export function logPos(v: number, lo: number, hi: number): number {

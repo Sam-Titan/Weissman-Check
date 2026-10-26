@@ -13,7 +13,7 @@ export default function Help({ text }: { text: string }) {
         <button
           type="button"
           aria-label="What does this mean?"
-          className="ml-1 inline-flex h-4 w-4 items-center justify-center rounded-full border border-line text-[10px] font-bold text-muted hover:text-accent"
+          className="ml-1 inline-flex h-4 w-4 items-center justify-center rounded-full border-2 border-ink bg-sun text-[10px] font-black text-ink hover:bg-pink"
         >
           ?
         </button>
@@ -21,7 +21,7 @@ export default function Help({ text }: { text: string }) {
       <RadixTooltip.Portal>
         <RadixTooltip.Content
           sideOffset={6}
-          className="z-10 max-w-60 rounded-lg border border-line bg-card p-3 text-sm font-normal text-ink"
+          className="z-50 max-w-60 rounded-md border-2 border-ink bg-white p-3 text-sm font-normal text-ink shadow-pop-sm"
         >
           {text}
         </RadixTooltip.Content>
@@ -42,7 +42,7 @@ export function Tip({ text, children }: { text: string; children: ReactNode }) {
       <RadixTooltip.Portal>
         <RadixTooltip.Content
           sideOffset={6}
-          className="z-10 max-w-64 rounded-lg border border-line bg-card p-3 text-sm font-normal text-ink"
+          className="z-50 max-w-64 rounded-md border-2 border-ink bg-white p-3 text-sm font-normal text-ink shadow-pop-sm"
         >
           {text}
         </RadixTooltip.Content>

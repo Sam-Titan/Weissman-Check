@@ -1,5 +1,6 @@
 import * as ToggleGroup from "@radix-ui/react-toggle-group";
 import { formatTime } from "../lib/format";
+import Window from "./Window";
 import type { Analysis, Mode, RowSummary } from "../types";
 
 const UNIVERSAL = new Set(["gzip", "brotli"]);
@@ -49,35 +50,37 @@ export default function RecommendationBanner({
     line = `For ${MODE_NOTE[mode]}: reaches a user in ${formatTime(winner.delivery_s)}, ${winner.percent_saved.toFixed(0)}% smaller`;
   }
   return (
-    <section className="flex h-32 shrink-0 items-center justify-between gap-4 overflow-hidden rounded-xl bg-deep px-5 text-white [@media(max-height:760px)]:h-24">
-      <div className="min-w-0 space-y-0.5">
-        <p className="truncate text-3xl font-black leading-tight tracking-tight [@media(max-height:760px)]:text-2xl">{head}</p>
-        <p className="truncate text-sm font-bold text-white/90" title={note}>
-          {note}
-        </p>
-        <p className="truncate text-lg font-bold" title={line}>
-          {line}
-        </p>
-        <p className="text-xs font-bold text-white/70 [@media(max-height:760px)]:hidden">
-          Fastest means shortest time to reach a user at {analysis.network_mbps} Mbit/s.
-        </p>
+    <Window title="Verdict" color="blue" className="shrink-0" bodyClassName="bg-sun">
+      <div className="flex h-28 items-center justify-between gap-4 px-5 [@media(max-height:760px)]:h-[5.5rem]">
+        <div className="min-w-0 space-y-0.5">
+          <p className="truncate font-pixel text-3xl font-bold leading-tight [@media(max-height:760px)]:text-2xl">{head}</p>
+          <p className="truncate text-sm font-bold" title={note}>
+            {note}
+          </p>
+          <p className="truncate text-lg font-bold" title={line}>
+            {line}
+          </p>
+          <p className="text-xs font-bold opacity-70 [@media(max-height:760px)]:hidden">
+            Fastest means shortest time to reach a user at {analysis.network_mbps} Mbit/s.
+          </p>
+        </div>
+        <ToggleGroup.Root
+          type="single"
+          value={mode}
+          onValueChange={(v) => v && onMode(v as Mode)}
+          className="flex shrink-0 self-start overflow-hidden rounded-md border-2 border-ink bg-white shadow-pop-sm mt-3"
+        >
+          {(["static", "dynamic"] as const).map((m) => (
+            <ToggleGroup.Item
+              key={m}
+              value={m}
+              className="px-4 py-1.5 font-bold capitalize data-[state=on]:bg-ink data-[state=on]:text-white"
+            >
+              {m}
+            </ToggleGroup.Item>
+          ))}
+        </ToggleGroup.Root>
       </div>
-      <ToggleGroup.Root
-        type="single"
-        value={mode}
-        onValueChange={(v) => v && onMode(v as Mode)}
-        className="flex shrink-0 self-start overflow-hidden rounded-lg border border-white/60 mt-4"
-      >
-        {(["static", "dynamic"] as const).map((m) => (
-          <ToggleGroup.Item
-            key={m}
-            value={m}
-            className="px-4 py-1.5 font-black capitalize data-[state=on]:bg-white data-[state=on]:text-deep"
-          >
-            {m}
-          </ToggleGroup.Item>
-        ))}
-      </ToggleGroup.Root>
-    </section>
+    </Window>
   );
 }

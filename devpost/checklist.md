@@ -127,3 +127,4 @@ Activity mode: [not started]
 - Results layout rebuilt for 1280×720 — tabs [Scorecard | Table | Delivery chart], table and chart scroll inside their cards, the narrator box moved to the right column, and below 900 px the columns stack. The banner's four lines are always filled so it has no internal gap.
 - Page height now adapts to the window — a fixed 128 px banner and fixed-size gauges still overflowed some real screens (the learner scrolled at about 1333×700), so on screens 900 px wide or more the page is one viewport tall and the gauges, replay card, table and chart share what is left.
 - Narrator tour now floats over the page, with a Walkthrough button in the header to bring it back (the learner's request).
+- Look changed from flat 2013–2015 to a bright retro file-archiver desktop (Window component, pixel titles, hard shadows, press-down buttons) — the learner found the flat look too plain and wanted brighter, less flat.

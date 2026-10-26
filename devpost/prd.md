@@ -50,11 +50,11 @@ Two surfaces: the hero page and the compressor page. There is no nav bar and the
 
 ## Look and Feel
 Established by the learner:
-- **Era and mood:** 2013–2015 flat design, classy, clean and bright. References: iOS 7, Windows Metro tiles, early Stripe, Dropbox and Slack marketing pages. Calm, generous spacing, smooth transitions.
-- **Surfaces:** white or very light grey background. Flat white cards with a thin 1px border and soft corners. No heavy shadows or gradients.
-- **Accent colour:** one confident bright blue for buttons and the recommendation banner.
+- **Era and mood:** retro 90s file-archiver desktop (revised after the learner found the flat look too plain): bright, playful, chunky. Windows with coloured title bars, pixel-font titles, buttons that press down.
+- **Surfaces:** bright sky-blue dotted desktop, white windows with 2px dark ink borders and a hard offset shadow (no blur, no gradients).
+- **Accent colour:** sunny yellow for primary buttons and the verdict window, with pink, green, orange and violet title bars.
 - **Compressor colours:** each compressor has its own bright colour, used consistently everywhere (carousel card, progress segments, table rows, replay highlights). Examples: gzip blue, brotli orange, zstd teal, lz4 yellow, xz purple, bzip2 pink.
-- **Fonts:** a clean humanist sans for the UI (Lato or Source Sans 3). A monospace for numbers and file text (Source Code Pro or JetBrains Mono).
+- **Fonts:** Silkscreen (pixel) for titles, Space Grotesk for the UI, Source Code Pro for numbers and file text.
 - **Flair:** one moment of flair, the segmented progress bar.
 - **Avoid:** generic AI-app styling, dark mode by default, any *Silicon Valley* branding (`scope.md > Inspiration & Identity`).
 
@@ -144,7 +144,7 @@ Six compressors: gzip, brotli, zstd, lz4, xz, bzip2. Each is run at a fast and a
 - The left half switches to results automatically when the run finishes, not after a download. The user can try another file from there.
 - Carousel reading and inclusion are separate: the carousel is for learning, and the checkboxes pick what to compare.
 - Nothing persists. A refresh starts fresh, which is acceptable for the proof of concept.
-- A bright, flat, 2013–2015 look with per-compressor colours used consistently everywhere.
+- A bright, retro file-archiver look with per-compressor colours used consistently everywhere.
 
 ## What We're Building
 - Hero page with a looping squeeze animation and a Start button.
@@ -154,7 +154,7 @@ Six compressors: gzip, brotli, zstd, lz4, xz, bzip2. Each is run at a fast and a
 - Replay card with repeat highlights, labels, a bytes-saved counter, and Stop/Restart.
 - Results: recommendation banner with static/dynamic toggle, a scorecard of gauges, a delivery time chart showing where the time goes, results table with per-row download, "?" tooltips on metrics, and the Weissman "break it" control.
 - The empty and error states above, and Try another file.
-- The flat, bright, 2013–2015 look.
+- The bright, retro file-archiver look.
 
 ## Deferred From the POC
 - Separate libraries and metrics pages: content already lives in narration cards and tooltips.

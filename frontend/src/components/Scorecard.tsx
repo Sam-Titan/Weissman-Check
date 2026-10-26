@@ -68,12 +68,12 @@ export default function Scorecard({
                 role="option"
                 aria-selected={on}
                 onClick={() => onSelect(key)}
-                className={`flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs font-bold ${
-                  on ? "border-ink bg-ink text-white" : "border-line bg-card text-ink"
+                className={`flex items-center gap-1.5 rounded-md border-2 border-ink px-2 py-0.5 text-xs font-bold ${
+                  on ? "bg-ink text-white" : "bg-white text-ink hover:bg-sun"
                 }`}
               >
                 <span
-                  className="inline-block h-2.5 w-2.5 shrink-0 rounded-full"
+                  className="inline-block h-2.5 w-2.5 shrink-0 rounded-full border-2 border-ink bg-clip-padding"
                   style={{ background: COLORS[c as CompressorName] }}
                 />
                 {c} <span className="font-normal opacity-70">{s}</span>
@@ -85,6 +85,7 @@ export default function Scorecard({
       {row && (
         <div className="grid min-h-0 flex-1 gap-2 min-[900px]:grid-cols-3 min-[900px]:grid-rows-2">
           <Gauge
+            bar="bg-deep"
             title={`Time to user (${mode})`}
             valueText={formatTime(time as number)}
             meaning={`Until a user has the file at ${analysis.network_mbps} Mbit/s${mode === "dynamic" ? ", compressing included" : ""}.`}
@@ -93,6 +94,7 @@ export default function Scorecard({
             tick={gzTime !== null ? { t: timePos(gzTime), label: "gzip default" } : null}
           />
           <Gauge
+            bar="bg-lime !text-ink"
             title="Saved"
             valueText={`${row.saved_percent.toFixed(1)}%`}
             meaning="How much smaller the file gets."
@@ -101,6 +103,7 @@ export default function Scorecard({
             tick={gz ? { t: linPos(gz.saved_percent, 0, 100), label: "gzip default" } : null}
           />
           <Gauge
+            bar="bg-xz"
             title="Decompress speed"
             valueText={`${formatSpeed(row.decompress_mbps)} MB/s`}
             meaning="How fast a user's device unpacks it."
@@ -113,6 +116,7 @@ export default function Scorecard({
             }
           />
           <Gauge
+            bar="bg-tang"
             title="Entropy of your file"
             valueText={entropyBits === null ? "—" : `${entropyBits.toFixed(2)} bits/B`}
             meaning="How patterned the file is before any compressor touches it."
@@ -121,9 +125,11 @@ export default function Scorecard({
             muted={entropyBits === null}
           />
           <section
-            className="grid min-h-0 min-w-0 items-center gap-1 rounded-xl border border-line bg-card min-[900px]:col-span-2 min-[900px]:grid-cols-[1fr_1.1fr]"
+            className="flex min-h-0 min-w-0 flex-col overflow-hidden rounded-md border-2 border-ink bg-card shadow-pop-sm min-[900px]:col-span-2"
             aria-label="Weissman gauge"
           >
+            <div className="border-b-2 border-ink bg-pink px-2 py-0.5 font-pixel text-[11px] text-white">Weissman score</div>
+            <div className="grid min-h-0 flex-1 items-center gap-1 min-[900px]:grid-cols-[1fr_1.1fr]">
             <Gauge
               bare
               title="Weissman score"
@@ -144,12 +150,13 @@ export default function Scorecard({
                 note={changeNote}
               />
             </div>
+            </div>
           </section>
         </div>
       )}
-      <p className="shrink-0 text-xs text-muted [@media(max-height:760px)]:hidden">
+      <p className="shrink-0 text-xs [@media(max-height:760px)]:hidden">
         <span className="mr-1 inline-block h-2 w-2 rounded-full align-middle" style={{ background: GOOD }} />
-        Right is always the good end, except entropy, where right means already dense. The black tick marks where
+        Right is always the good end, except entropy, where right means already dense. The pink tick marks where
         gzip level 6 lands.
       </p>
     </div>

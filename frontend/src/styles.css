@@ -1,30 +1,133 @@
 @import "tailwindcss";
-@import "@fontsource/lato/400.css";
-@import "@fontsource/lato/700.css";
-@import "@fontsource/lato/900.css";
+@import "@fontsource/space-grotesk/400.css";
+@import "@fontsource/space-grotesk/500.css";
+@import "@fontsource/space-grotesk/700.css";
+@import "@fontsource/silkscreen/400.css";
+@import "@fontsource/silkscreen/700.css";
 @import "@fontsource/source-code-pro/400.css";
 @import "@fontsource/source-code-pro/600.css";
 
+/* A retro file-archiver look: bright desktop, windows with coloured title bars, hard shadows. */
 @theme {
-  --font-sans: "Lato", system-ui, sans-serif;
+  --font-sans: "Space Grotesk", system-ui, sans-serif;
   --font-mono: "Source Code Pro", ui-monospace, monospace;
-  --color-page: #f7f8fa;
+  --font-pixel: "Silkscreen", "Space Grotesk", monospace;
+
+  --color-page: #5ad1ff; /* the desktop */
   --color-card: #ffffff;
-  --color-line: #e3e7ed;
-  --color-ink: #1f2933;
-  --color-muted: #7b8794;
-  --color-accent: #1e88ff;
-  --color-deep: #0a2f7a;
-  --color-gzip: #2f80ed;
-  --color-brotli: #f2994a;
-  --color-zstd: #1abc9c;
-  --color-lz4: #f2c94c;
-  --color-xz: #9b51e0;
-  --color-bzip2: #eb5c9a;
+  --color-ink: #14123b;
+  --color-line: #d9d6f2; /* soft dividers inside windows */
+  --color-muted: #5b5880;
+  --color-accent: #3b4bff;
+  --color-deep: #2a2fc4;
+  --color-sun: #ffd93d;
+  --color-pink: #ff4fa3;
+  --color-lime: #2fd47f;
+  --color-tang: #ff8a2b;
+  --color-mint: #c9f5df;
+
+  --color-gzip: #2f6bff;
+  --color-brotli: #ff8a2b;
+  --color-zstd: #14c9a0;
+  --color-lz4: #ffc41f;
+  --color-xz: #a24bff;
+  --color-bzip2: #ff4fa3;
+
+  --shadow-pop: 4px 4px 0 var(--color-ink);
+  --shadow-pop-sm: 3px 3px 0 var(--color-ink);
+}
+
+html {
+  background: var(--color-page);
 }
 
 body {
-  background: var(--color-page);
+  background-color: var(--color-page);
+  background-image: radial-gradient(rgb(20 18 59 / 0.18) 1.2px, transparent 1.6px);
+  background-size: 16px 16px;
   color: var(--color-ink);
   font-family: var(--font-sans);
+}
+
+@layer components {
+  /* Chunky buttons: hard shadow, press down when clicked. */
+  .btn {
+    border: 2px solid var(--color-ink);
+    border-radius: 6px;
+    background: #fff;
+    color: var(--color-ink);
+    font-weight: 700;
+    box-shadow: var(--shadow-pop-sm);
+    transition:
+      transform 80ms,
+      box-shadow 80ms;
+    cursor: pointer;
+  }
+  .btn:hover:not(:disabled) {
+    transform: translate(-1px, -1px);
+    box-shadow: 4px 4px 0 var(--color-ink);
+  }
+  .btn:active:not(:disabled),
+  .btn[aria-pressed="true"] {
+    transform: translate(2px, 2px);
+    box-shadow: 1px 1px 0 var(--color-ink);
+  }
+  .btn[aria-pressed="true"] {
+    background: var(--color-sun);
+  }
+  .btn:disabled {
+    opacity: 0.45;
+    box-shadow: none;
+    cursor: not-allowed;
+  }
+  .btn-primary {
+    background: var(--color-sun);
+  }
+  .btn:focus-visible,
+  button:focus-visible,
+  [role="radio"]:focus-visible {
+    outline: 3px solid var(--color-pink);
+    outline-offset: 2px;
+  }
+
+  /* A window: outline, title bar and hard shadow. */
+  .win {
+    display: flex;
+    flex-direction: column;
+    border: 2px solid var(--color-ink);
+    border-radius: 8px;
+    background: var(--color-card);
+    box-shadow: var(--shadow-pop);
+    overflow: hidden;
+  }
+  .win-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    flex-shrink: 0;
+    border-bottom: 2px solid var(--color-ink);
+    padding: 0.2rem 0.6rem;
+    color: #fff;
+    font-family: var(--font-pixel);
+    font-size: 0.8rem;
+    letter-spacing: 0.02em;
+  }
+  .win-dots {
+    display: flex;
+    gap: 4px;
+  }
+  .win-dots i {
+    display: block;
+    width: 10px;
+    height: 10px;
+    border: 2px solid var(--color-ink);
+    background: #fff;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn {
+    transition: none;
+  }
 }

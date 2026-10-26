@@ -2,7 +2,7 @@ import { BROWSER_SUPPORTED, COLORS, type CompressorName } from "../lib/compresso
 import { formatSpeed, formatTime } from "../lib/format";
 import { METRIC_TIPS } from "../content/narration";
 import type { Analysis, JobResult, Mode, ScoreCell } from "../types";
-import Help, { Tip } from "./Tooltip";
+import { Tip } from "./Tooltip";
 
 const ZSTD_NOTE = "Supported in Chromium and Firefox; Safari support has lagged.";
 
@@ -42,12 +42,17 @@ export default function ResultsTable({
   );
   const head = (label: string, tip?: keyof typeof METRIC_TIPS, left = false) => (
     <th className={`whitespace-nowrap py-1.5 font-bold ${left ? "pl-3 text-left" : "text-right"}`}>
-      {label}
-      {tip && <Help text={METRIC_TIPS[tip]} />}
+      {tip ? (
+        <Tip text={METRIC_TIPS[tip]}>
+          <span className="underline decoration-dotted underline-offset-4">{label}</span>
+        </Tip>
+      ) : (
+        label
+      )}
     </th>
   );
   return (
-    <div className="flex h-full flex-col rounded-xl border border-line bg-card max-[899px]:h-auto">
+    <div className="flex h-full flex-col rounded-md border-2 border-ink bg-card max-[899px]:h-auto">
       <div className="min-h-0 flex-1 overflow-auto">
       <table className="w-full min-w-[820px] table-fixed text-sm tabular-nums">
         <colgroup>
@@ -55,7 +60,7 @@ export default function ResultsTable({
             <col key={i} style={{ width: w }} />
           ))}
         </colgroup>
-        <thead className="sticky top-0 z-[1] bg-card text-xs text-muted shadow-[0_1px_0_var(--color-line)]">
+        <thead className="sticky top-0 z-[1] bg-sun text-xs text-ink shadow-[0_2px_0_var(--color-ink)]">
           <tr>
             {head("Compressor", undefined, true)}
             {head("Size KB", "size")}
@@ -84,7 +89,7 @@ export default function ResultsTable({
                 key={key}
                 onClick={() => onSelect(key)}
                 aria-selected={selected === key}
-                className={`h-7 cursor-pointer border-t border-line ${selected === key ? "outline outline-2 -outline-offset-2 outline-ink" : ""}`}
+                className={`h-7 cursor-pointer border-t border-line hover:bg-sun/30 ${selected === key ? "outline outline-[3px] -outline-offset-2 outline-ink" : ""}`}
                 style={
                   isWinner || isTied
                     ? { background: `color-mix(in srgb, ${color} ${isWinner ? 16 : 9}%, white)` }
@@ -110,7 +115,7 @@ export default function ResultsTable({
                 {r.status === "failed" ? (
                   <td colSpan={9} className="pr-3 text-right">
                     <Tip text={r.error ?? "This run failed."}>
-                      <span className="rounded-full bg-line px-2 py-0.5 font-sans text-xs font-bold text-red-600">
+                      <span className="rounded border-2 border-ink bg-white px-1.5 py-0 font-sans text-xs font-bold text-red-600">
                         failed
                       </span>
                     </Tip>
@@ -140,7 +145,7 @@ export default function ResultsTable({
                           onDownload(r);
                         }}
                         aria-label={`Download ${r.compressor} (${r.setting})`}
-                        className="rounded px-1 font-sans font-bold text-accent hover:bg-accent/10"
+                        className="btn !shadow-none px-1.5 font-sans text-xs"
                       >
                         ⬇
                       </button>
@@ -153,7 +158,7 @@ export default function ResultsTable({
         </tbody>
       </table>
       </div>
-      <p className="border-t border-line px-3 py-1.5 text-xs text-muted">
+      <p className="border-t-2 border-ink bg-mint px-3 py-1.5 text-xs">
         ★ pick · ≈ effectively tied · ✓* zstd: {ZSTD_NOTE}
       </p>
     </div>
@@ -165,7 +170,7 @@ function ScoreView({ score, rank }: { score: ScoreCell | undefined; rank: number
   if (score.status === "undefined")
     return (
       <Tip text={score.note}>
-        <span className="rounded-full bg-line px-2 py-0.5 font-sans text-xs font-bold text-muted">
+        <span className="rounded border-2 border-ink bg-white px-1.5 py-0 font-sans text-xs font-bold text-muted">
           undefined
         </span>
       </Tip>

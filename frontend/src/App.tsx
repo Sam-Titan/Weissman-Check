@@ -6,6 +6,7 @@ import { validateFile } from "./lib/validate";
 import CompressorCarousel from "./components/CompressorCarousel";
 import Dropbox from "./components/Dropbox";
 import Hero from "./components/Hero";
+import Window from "./components/Window";
 import NarratorBox from "./components/NarratorBox";
 import FileChip from "./components/FileChip";
 import { formatSize } from "./lib/format";
@@ -177,23 +178,23 @@ export default function App() {
     <TooltipProvider>
       <main className="mx-auto flex max-w-[1400px] flex-col gap-3 p-4 max-[899px]:overflow-x-hidden min-[900px]:h-dvh min-[900px]:overflow-hidden">
         <header className="flex shrink-0 flex-wrap items-center gap-x-4 gap-y-2">
-          <h1 className="text-2xl font-black">Weissman Check</h1>
+          <h1 className="font-pixel text-2xl text-ink [text-shadow:2px_2px_0_#fff]">Weissman Check</h1>
           {status === "done" && rows.length > 0 && (
-            <span className="font-mono text-xs text-muted">
+            <span className="rounded border-2 border-ink bg-white px-2 py-0.5 font-mono text-xs">
               {file?.file.name} · Original: {formatSize(rows[0].original_bytes)}
             </span>
           )}
           <div className="ml-auto flex gap-2">
             <button
               onClick={() => setTour((t) => ({ open: true, key: t.key + 1 }))}
-              className="rounded-xl border-2 border-line bg-card px-3 py-1 text-sm font-bold text-deep"
+              className="btn px-3 py-1 text-sm"
             >
               Walkthrough
             </button>
             {status === "done" && (
               <button
                 onClick={tryAnother}
-                className="rounded-xl border-2 border-accent bg-card px-3 py-1 text-sm font-bold text-accent"
+                className="btn px-3 py-1 text-sm"
               >
                 Try another file
               </button>
@@ -202,7 +203,7 @@ export default function App() {
         </header>
         <div className="grid gap-4 min-[900px]:min-h-0 min-[900px]:flex-1 min-[900px]:grid-cols-[minmax(0,1fr)_420px] min-[900px]:grid-rows-[minmax(0,1fr)]">
           <div className="flex min-w-0 flex-col gap-3 min-[900px]:min-h-0 min-[900px]:overflow-y-auto">
-            {message && <p className="text-red-600">{message}</p>}
+            {message && <p className="rounded border-2 border-ink bg-white px-3 py-2 font-bold text-red-600">{message}</p>}
             {picking && (
               <>
                 <Dropbox
@@ -225,52 +226,55 @@ export default function App() {
                   <button
                     onClick={run}
                     disabled={!file || included.length === 0}
-                    className="rounded-xl bg-accent px-6 py-2 text-lg font-black text-white disabled:opacity-40"
+                    className="btn btn-primary px-6 py-2 text-lg"
                   >
                     Run
                   </button>
                   {included.length === 0 ? (
-                    <span className="text-sm font-bold text-red-600">Pick at least one compressor.</span>
+                    <span className="rounded border-2 border-ink bg-white px-2 py-0.5 text-sm font-bold text-red-600">Pick at least one compressor.</span>
                   ) : (
-                    !file && <span className="text-sm text-muted">Add a file to run.</span>
+                    !file && <span className="rounded border-2 border-ink bg-white px-2 py-0.5 text-sm">Add a file to run.</span>
                   )}
                 </div>
               </>
             )}
             {busy && (
-              <div className="space-y-2 rounded-xl border border-line bg-card p-5">
-                <p className="text-sm font-bold text-muted">
-                  Running real compressors… {rows.length} of 12 done
-                </p>
+              <Window title="Compressing…" color="orange" bodyClassName="space-y-2 p-5">
+                <p className="text-sm font-bold">Running real compressors… {rows.length} of 12 done</p>
                 <ProgressBar included={included} results={results} running={busy} />
-              </div>
+              </Window>
             )}
             {status === "done" && analysis && (
               <>
                 <RecommendationBanner analysis={analysis} mode={mode} onMode={setMode} />
-                <div role="tablist" className="flex shrink-0 gap-1">
-                  {(
-                    [
-                      ["scorecard", "Scorecard"],
-                      ["table", "Table"],
-                      ["chart", "Delivery chart"],
-                    ] as const
-                  ).map(([id, label]) => (
-                    <button
-                      key={id}
-                      role="tab"
-                      aria-selected={view === id}
-                      onClick={() => setView(id)}
-                      className={`rounded-lg px-3 py-1 text-sm font-bold ${
-                        view === id ? "bg-deep text-white" : "bg-card text-muted"
-                      }`}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
-                {downloadMessage && <p className="shrink-0 text-sm font-bold text-red-600">{downloadMessage}</p>}
-                <div className="min-h-0 flex-1 max-[899px]:flex-none min-[900px]:overflow-auto">
+                <section className="win min-h-0 flex-1 max-[899px]:flex-none" aria-label="Results">
+                  <div role="tablist" className="win-bar !items-end !justify-start gap-1 !bg-deep !pb-0 !pt-1.5">
+                    {(
+                      [
+                        ["scorecard", "Scorecard"],
+                        ["table", "Table"],
+                        ["chart", "Delivery chart"],
+                      ] as const
+                    ).map(([id, label]) => (
+                      <button
+                        key={id}
+                        role="tab"
+                        aria-selected={view === id}
+                        onClick={() => setView(id)}
+                        className={`-mb-0.5 rounded-t-md border-2 border-b-0 border-ink px-3 py-1 font-pixel text-sm ${
+                          view === id ? "bg-white text-ink" : "bg-accent text-white hover:bg-pink"
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                  {downloadMessage && (
+                    <p className="shrink-0 border-b-2 border-ink bg-white px-3 py-1 text-sm font-bold text-red-600">
+                      {downloadMessage}
+                    </p>
+                  )}
+                  <div className="min-h-0 flex-1 p-3 max-[899px]:flex-none min-[900px]:overflow-auto">
                 {view === "scorecard" ? (
                   <Scorecard
                     analysis={analysis}
@@ -305,7 +309,8 @@ export default function App() {
                 ) : (
                   <DeliveryChart analysis={analysis} mode={mode} />
                 )}
-                </div>
+                  </div>
+                </section>
               </>
             )}
           </div>

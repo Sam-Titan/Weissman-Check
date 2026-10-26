@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { NARRATIONS } from "../content/narration";
 import { COLORS, COMPRESSORS, type CompressorName } from "../lib/compressors";
+import Window from "./Window";
 
 /** Six cards. Clicking a card to read it changes only the narration; the checkbox picks what runs. */
 export default function CompressorCarousel({
@@ -17,9 +18,9 @@ export default function CompressorCarousel({
     setReading((r) => COMPRESSORS[(COMPRESSORS.indexOf(r) + d + COMPRESSORS.length) % COMPRESSORS.length]);
   const n = NARRATIONS[reading];
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       <div className="flex items-stretch gap-2">
-        <button aria-label="Previous compressor" onClick={() => step(-1)} className="px-1 text-xl text-muted">
+        <button aria-label="Previous compressor" onClick={() => step(-1)} className="px-1 text-xl font-black">
           ‹
         </button>
         <div className="grid flex-1 grid-cols-6 gap-2" role="list">
@@ -31,11 +32,11 @@ export default function CompressorCarousel({
                 role="listitem"
                 data-reading={reading === c}
                 onClick={() => setReading(c)}
-                className={`cursor-pointer overflow-hidden rounded-xl border bg-card ${
-                  reading === c ? "border-ink ring-2 ring-ink/10" : "border-line"
+                className={`cursor-pointer overflow-hidden rounded-md border-2 border-ink bg-card transition-transform ${
+                  reading === c ? "-translate-x-px -translate-y-px shadow-pop-sm" : ""
                 } ${on ? "" : "opacity-50"}`}
               >
-                <div className="h-2" style={{ background: COLORS[c] }} />
+                <div className="h-3 border-b-2 border-ink" style={{ background: COLORS[c] }} />
                 <div className="flex items-center justify-between px-2 py-2">
                   <span className="font-bold">{c}</span>
                   <input
@@ -45,24 +46,26 @@ export default function CompressorCarousel({
                     aria-label={`Include ${c}`}
                     onClick={(e) => e.stopPropagation()}
                     onChange={() => onToggle(c)}
-                    className="h-4 w-4 accent-accent"
+                    className="h-4 w-4 accent-ink"
                   />
                 </div>
               </div>
             );
           })}
         </div>
-        <button aria-label="Next compressor" onClick={() => step(1)} className="px-1 text-xl text-muted">
+        <button aria-label="Next compressor" onClick={() => step(1)} className="px-1 text-xl font-black">
           ›
         </button>
       </div>
-      <div className="rounded-xl border border-line bg-card p-4" aria-label="Narration" data-testid="narration">
-        <p className="mb-1 flex items-center gap-2 font-black">
-          <span className="inline-block h-3 w-3 rounded-sm" style={{ background: COLORS[reading] }} />
-          {n.title}
+      <Window title={n.title} color="violet" label="Narration" bodyClassName="p-3">
+        <p className="text-sm" data-testid="narration">
+          <span
+            className="mr-2 inline-block h-3 w-3 rounded-sm border-2 border-ink align-middle"
+            style={{ background: COLORS[reading] }}
+          />
+          {n.body}
         </p>
-        <p className="text-sm">{n.body}</p>
-      </div>
+      </Window>
     </div>
   );
 }

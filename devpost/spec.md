@@ -57,7 +57,7 @@ Download ────────────────── GET /api/runs/{i
 | Styling | **Tailwind CSS v4** with a custom theme (`@theme` tokens from the PRD) | Learner's change from plain CSS. https://tailwindcss.com/docs. Not shadcn's default look (the generic style the PRD rules out). |
 | Unstyled UI pieces | **Radix Primitives** (`@radix-ui/react-tooltip`, `react-switch`/`toggle-group`) | Accessible tooltip / toggle behavior, styled by us. https://www.radix-ui.com/primitives |
 | Animation | **Motion** (`motion/react`) | Results slide-in, replay card resize. https://motion.dev/docs/react |
-| Fonts | **@fontsource/lato** + **@fontsource/source-code-pro** | Self-hosted via npm so the demo works offline. |
+| Fonts | **@fontsource/silkscreen** + **@fontsource/space-grotesk** + **@fontsource/source-code-pro** | Self-hosted via npm so the demo works offline. |
 | Task runner | **just** (`Justfile`) | `just dev` starts both servers. No Docker Compose. |
 | State | React `useReducer` / `useState` in `App` | No TanStack Query, Zustand, React Router, Hey API, CI or Lefthook (learner's decision). |
 
@@ -73,10 +73,10 @@ Not verified yet (check in Build step 1): current versions of `brotli`, `zstanda
 ## Look and Feel
 Carried from `prd.md > Look and Feel` (do not re-interview). Tailwind v4 `@theme` tokens in `frontend/src/styles.css`:
 
-- **Surfaces:** page `#F7F8FA`, cards `#FFFFFF` with 1px `#E3E7ED` border, `rounded-xl`, no shadows or gradients. Generous spacing.
-- **Accent:** one bright blue `#1E88FF` for buttons and the recommendation banner (white text).
+- **Surfaces:** page `#5ad1ff` with a dot pattern; windows (`.win` + `Window.tsx`, coloured `.win-bar` title bar) are white with 2px ink `#14123b` borders and a hard 4px offset shadow. Buttons use `.btn` (press-down) and `.btn-primary` (yellow).
+- **Accent:** sun `#ffd93d` (primary buttons, verdict window); title-bar colours pink `#ff4fa3`, lime `#2fd47f`, tang `#ff8a2b`, deep `#2a2fc4`.
 - **Compressor colours (used in carousel, progress segments, table rows, replay highlights):** gzip `#2F80ED` blue, brotli `#F2994A` orange, zstd `#1ABC9C` teal, lz4 `#F2C94C` yellow, xz `#9B51E0` purple, bzip2 `#EB5C9A` pink. Defined once in `frontend/src/lib/compressors.ts` and exposed as CSS variables.
-- **Fonts:** Lato for UI; Source Code Pro for numbers and file text.
+- **Fonts:** Silkscreen for titles; Space Grotesk for UI; Source Code Pro for numbers and file text.
 - **Motion:** smooth 200–300 ms transitions (Motion). The segmented progress bar is the one flourish; everything else stays calm.
 - **Tone of copy:** friendly, plain English, a little wry. No *Silicon Valley* names, logos or imagery. Light theme only.
 
@@ -291,6 +291,7 @@ weissman-check/
 │       │   └── samples.ts      # sample button labels → file names
 │       └── components/
 │           ├── Hero.tsx
+│           ├── Window.tsx          # retro window frame with coloured title bar
 │           ├── NarratorBox.tsx
 │           ├── Dropbox.tsx
 │           ├── FileChip.tsx

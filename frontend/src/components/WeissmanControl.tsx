@@ -21,19 +21,19 @@ function Group<T extends string>({
 }) {
   return (
     <div>
-      <p className="mb-1 text-xs font-bold text-muted">{label}</p>
+      <p className="mb-1 text-xs font-bold">{label}</p>
       <ToggleGroup.Root
         type="single"
         value={value}
         onValueChange={(v) => v && onChange(v as T)}
         aria-label={label}
-        className="flex overflow-hidden rounded-lg border border-line"
+        className="flex overflow-hidden rounded-md border-2 border-ink bg-white"
       >
         {(Object.keys(options) as T[]).map((k) => (
           <ToggleGroup.Item
             key={k}
             value={k}
-            className="px-2.5 py-1 text-xs font-bold data-[state=on]:bg-deep data-[state=on]:text-white"
+            className="px-2.5 py-1 text-xs font-bold data-[state=on]:bg-ink data-[state=on]:text-white"
           >
             {options[k]}
           </ToggleGroup.Item>
@@ -59,7 +59,7 @@ export default function WeissmanPicker({
 }) {
   return (
     <div className="space-y-2" aria-label="Weissman control">
-      <h3 className="text-sm font-black">Break the Weissman score</h3>
+      <h3 className="font-pixel text-sm">Break the Weissman score</h3>
       <Group label="Time unit" value={unit} options={UNIT_LABELS} onChange={onUnit} />
       <Group label="Baseline" value={baseline} options={BASELINE_LABELS} onChange={onBaseline} />
       {note && (

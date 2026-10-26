@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import Window from "./Window";
 import { NARRATOR_INTRO } from "../content/narration";
 import { bytesSaved, findMatches, REF_COST } from "../lib/lz77";
 
@@ -61,15 +62,16 @@ export default function ReplayCard({ text, fileBytes, runId, tall }: Props) {
   const latest = seen.at(-1);
 
   return (
-    <section
-      className={`flex min-h-[220px] flex-col overflow-hidden rounded-xl border border-line bg-card p-5 min-[900px]:min-h-0 min-[900px]:flex-1 max-[899px]:h-[380px] ${
-        tall ? "" : "min-[900px]:max-h-[380px]"
+    <Window
+      title="How LZ-style compressors see your file"
+      color="pink"
+      label="Replay"
+      className={`min-h-[220px] max-[899px]:h-[380px] min-[900px]:min-h-0 min-[900px]:flex-1 ${
+        tall ? "" : "min-[900px]:max-h-[400px]"
       }`}
-      aria-label="Replay"
+      bodyClassName="flex flex-col p-4"
     >
-      <h2 className="text-sm font-bold text-muted">
-        How LZ-style compressors see your file (simplified replay)
-      </h2>
+      <p className="text-xs font-bold text-muted">Simplified replay</p>
       {text === null ? (
         <p className="mt-3 text-ink">{NARRATOR_INTRO}</p>
       ) : (
@@ -79,7 +81,7 @@ export default function ReplayCard({ text, fileBytes, runId, tall }: Props) {
           )}
           <div
             ref={scroller}
-            className="relative mt-3 min-h-0 flex-1 overflow-y-auto rounded-lg bg-page p-3 font-mono text-xs leading-relaxed break-all whitespace-pre-wrap"
+            className="relative mt-2 min-h-0 flex-1 overflow-y-auto rounded-md border-2 border-ink bg-mint p-3 font-mono text-xs leading-relaxed break-all whitespace-pre-wrap"
             data-testid="replay-text"
           >
             {started ? (
@@ -97,7 +99,7 @@ export default function ReplayCard({ text, fileBytes, runId, tall }: Props) {
                 <div className="flex gap-2">
                   <button
                     onClick={() => setPlaying((p) => !p)}
-                    className="rounded-lg border border-line px-3 py-1 text-sm font-bold"
+                    className="btn px-3 py-1 text-sm"
                   >
                     {playing ? "Stop" : "Play"}
                   </button>
@@ -106,7 +108,7 @@ export default function ReplayCard({ text, fileBytes, runId, tall }: Props) {
                       setCursor(0);
                       setPlaying(true);
                     }}
-                    className="rounded-lg border border-line px-3 py-1 text-sm font-bold"
+                    className="btn px-3 py-1 text-sm"
                   >
                     Restart
                   </button>
@@ -121,7 +123,7 @@ export default function ReplayCard({ text, fileBytes, runId, tall }: Props) {
           )}
         </>
       )}
-    </section>
+    </Window>
   );
 }
 
@@ -146,10 +148,10 @@ function ReplayText({
         key={m.pos}
         data-match
         title={`repeat of ${m.length} chars from ${m.distance} back`}
-        className="rounded-sm bg-accent/20 text-ink"
+        className="rounded-sm bg-sun text-ink"
       >
         {text.slice(m.pos, m.pos + m.length)}
-        <sup className="ml-0.5 font-bold text-accent">
+        <sup className="ml-0.5 font-bold text-pink">
           {m.length}←{m.distance}
         </sup>
       </mark>,
@@ -160,7 +162,7 @@ function ReplayText({
   return (
     <>
       {parts}
-      <span ref={cursorRef} className="inline-block h-3 w-0.5 translate-y-0.5 bg-accent" />
+      <span ref={cursorRef} className="inline-block h-3 w-1 translate-y-0.5 bg-pink" />
       <span className="text-muted/50">{text.slice(cursor)}</span>
     </>
   );

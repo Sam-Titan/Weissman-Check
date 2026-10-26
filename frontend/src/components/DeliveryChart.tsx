@@ -17,7 +17,7 @@ export default function DeliveryChart({ analysis, mode }: { analysis: Analysis; 
 
   return (
     <div
-      className="rounded-xl border border-line bg-card p-4"
+      className="rounded-md border-2 border-ink bg-card p-4"
       aria-label="Delivery time chart"
     >
       <div className="mb-3 flex flex-wrap items-center gap-x-5 gap-y-1 text-xs font-bold text-muted">
@@ -50,8 +50,8 @@ export default function DeliveryChart({ analysis, mode }: { analysis: Analysis; 
                 {compressor} ({setting})
               </span>
               <div
-                className={`relative flex h-5 flex-1 overflow-hidden rounded-md bg-page ${
-                  isWinner ? "ring-2 ring-deep" : isTied ? "ring-1 ring-deep/50" : ""
+                className={`relative flex h-5 flex-1 overflow-hidden rounded-sm border-2 border-ink bg-white ${
+                  isWinner ? "shadow-pop-sm" : isTied ? "opacity-90" : ""
                 }`}
               >
                 {parts.map((p) => (
