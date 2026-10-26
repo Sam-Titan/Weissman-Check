@@ -29,3 +29,24 @@ export default function Help({ text }: { text: string }) {
     </RadixTooltip.Root>
   );
 }
+
+/** Wraps any inline content so hovering or focusing it explains something. */
+export function Tip({ text, children }: { text: string; children: ReactNode }) {
+  return (
+    <RadixTooltip.Root>
+      <RadixTooltip.Trigger asChild>
+        <span tabIndex={0} className="cursor-help">
+          {children}
+        </span>
+      </RadixTooltip.Trigger>
+      <RadixTooltip.Portal>
+        <RadixTooltip.Content
+          sideOffset={6}
+          className="z-10 max-w-64 rounded-lg border border-line bg-card p-3 text-sm font-normal text-ink"
+        >
+          {text}
+        </RadixTooltip.Content>
+      </RadixTooltip.Portal>
+    </RadixTooltip.Root>
+  );
+}

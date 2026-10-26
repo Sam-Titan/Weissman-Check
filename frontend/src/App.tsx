@@ -1,13 +1,14 @@
 import { useRef, useState } from "react";
 import { createRun, fetchSample, openEvents } from "./api";
-import { BROWSER_SUPPORTED, COLORS, COMPRESSORS, type CompressorName } from "./lib/compressors";
-import { formatSize, formatTime } from "./lib/format";
+import { COMPRESSORS } from "./lib/compressors";
+import { formatSize } from "./lib/format";
 import MetricsBox from "./components/MetricsBox";
 import ReplayCard, { REPLAY_BYTES } from "./components/ReplayCard";
 import ProgressBar from "./components/ProgressBar";
 import RecommendationBanner from "./components/RecommendationBanner";
-import Help, { TooltipProvider } from "./components/Tooltip";
-import { METRIC_TIPS } from "./content/narration";
+import DeliveryChart from "./components/DeliveryChart";
+import ResultsTable from "./components/ResultsTable";
+import { TooltipProvider } from "./components/Tooltip";
 import WeissmanControl, { BASELINE_LABELS, UNIT_LABELS } from "./components/WeissmanControl";
 import type { Analysis, Baseline, JobResult, Mode, ScoreCell, Unit } from "./types";
 
@@ -19,6 +20,29 @@ const SAMPLES = [
 
 type Status = "idle" | "running" | "done" | "error";
 
+/** What the current Weissman table says: who tops it and how many cells are flagged or undefined. */
+function summarise(cells: Record<string, ScoreCell>) {
+  const scored = Object.entries(cells).filter(([, c]) => c.value !== null);
+  scored.sort((a, b) => (b[1].value as number) - (a[1].value as number));
+  const values = Object.values(cells);
+  return {
+    top: scored[0] ? { key: scored[0][0].replace("/", " (") + ")", value: scored[0][1].value as number } : null,
+    flagged: values.filter((c) => c.status === "flagged").length,
+    undef: values.filter((c) => c.status === "undefined").length,
+  };
+}
+
+function describeChange(what: string, before: Record<string, ScoreCell>, after: Record<string, ScoreCell>) {
+  const b = summarise(before);
+  const a = summarise(after);
+  const top = a.top
+    ? `${a.top.key} now tops the table at ${a.top.value.toFixed(2)}${
+        b.top && b.top.key !== a.top.key ? `, replacing ${b.top.key}` : ""
+      }.`
+    : "No row has a score.";
+  return `You switched ${what}. ${top} ${a.flagged} flagged ⚠ (was ${b.flagged}), ${a.undef} undefined (was ${b.undef}).`;
+}
+
 export default function App() {
   const [status, setStatus] = useState<Status>("idle");
   const [results, setResults] = useState<JobResult[]>([]);
@@ -28,9 +52,10 @@ export default function App() {
   const [active, setActive] = useState<string | null>(null);
   const [preview, setPreview] = useState<{ text: string; bytes: number } | null>(null);
   const [runId, setRunId] = useState(0);
-  const [unit, setUnit] = useState<Unit>("s");
+  const [unit, setUnit] = useState<Unit>("ms");
   const [baseline, setBaseline] = useState<Baseline>("gzip6");
-  const [changed, setChanged] = useState("Scores are measured in seconds against gzip level 6.");
+  const [changeNote, setChangeNote] = useState<string | null>(null);
+  const [view, setView] = useState<"table" | "chart">("table");
   const closeRef = useRef<() => void>(() => {});
 
   async function runSample(name: string) {
@@ -39,6 +64,7 @@ export default function App() {
     setResults([]);
     setAnalysis(null);
     setMessage("");
+    setChangeNote(null);
     setStatus("running");
     try {
       const file = await fetchSample(name);
@@ -74,42 +100,49 @@ export default function App() {
     .sort((a, b) => (b[1].value as number) - (a[1].value as number))
     .map(([k]) => k);
   const pickUnit = (u: Unit) => {
+    if (analysis)
+      setChangeNote(
+        describeChange(`the time unit to ${UNIT_LABELS[u]}`, cells, analysis.weissman[u][baseline]),
+      );
     setUnit(u);
-    setChanged(`You switched the time unit to ${UNIT_LABELS[u]}; the baseline is still ${BASELINE_LABELS[baseline]}.`);
   };
   const pickBaseline = (b: Baseline) => {
+    if (analysis)
+      setChangeNote(
+        describeChange(`the baseline to ${BASELINE_LABELS[b]}`, cells, analysis.weissman[unit][b]),
+      );
     setBaseline(b);
-    setChanged(`You switched the baseline to ${BASELINE_LABELS[b]}; the time unit is still ${UNIT_LABELS[unit]}.`);
   };
-
-  const head = (label: string, tip: keyof typeof METRIC_TIPS) => (
-    <th>
-      {label}
-      <Help text={METRIC_TIPS[tip]} />
-    </th>
-  );
 
   return (
     <TooltipProvider>
-      <main className="mx-auto max-w-6xl space-y-6 p-8">
-        <h1 className="text-3xl font-bold">Weissman Check</h1>
-        <div className="grid items-start gap-6 lg:grid-cols-[3fr_2fr]">
-          <div className="min-w-0 space-y-6">
-            <div className="flex flex-wrap gap-3">
-              {SAMPLES.map((s) => (
-                <button
-                  key={s.file}
-                  disabled={busy}
-                  aria-pressed={active === s.file}
-                  onClick={() => runSample(s.file)}
-                  className={`rounded-xl border-2 border-accent px-4 py-2 font-bold disabled:opacity-40 ${
-                    active === s.file ? "bg-accent text-white" : "bg-card text-accent"
-                  }`}
-                >
-                  {s.label}
-                </button>
-              ))}
-            </div>
+      <main className="mx-auto max-w-[1400px] space-y-3 p-4">
+        <header className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          <h1 className="text-2xl font-black">Weissman Check</h1>
+          <span className="text-sm font-bold text-muted">Try a sample:</span>
+          <div className="flex flex-wrap gap-2">
+            {SAMPLES.map((s) => (
+              <button
+                key={s.file}
+                disabled={busy}
+                aria-pressed={active === s.file}
+                onClick={() => runSample(s.file)}
+                className={`rounded-xl border-2 border-accent px-3 py-1 text-sm font-bold disabled:opacity-40 ${
+                  active === s.file ? "bg-accent text-white" : "bg-card text-accent"
+                }`}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
+          {status === "done" && rows.length > 0 && (
+            <span className="ml-auto font-mono text-xs text-muted">
+              Original: {formatSize(rows[0].original_bytes)}
+            </span>
+          )}
+        </header>
+        <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_420px]">
+          <div className="min-w-0 space-y-3">
             {message && <p className="text-red-600">{message}</p>}
             {busy && (
               <div className="space-y-2 rounded-xl border border-line bg-card p-5">
@@ -122,138 +155,55 @@ export default function App() {
             {status === "done" && analysis && (
               <>
                 <RecommendationBanner analysis={analysis} mode={mode} onMode={setMode} />
-                <p className="font-mono text-sm text-muted">
-                  Original: {formatSize(rows[0].original_bytes)}
-                </p>
-                <div className="overflow-x-auto rounded-xl border border-line bg-card">
-                  <table className="w-full text-left">
-                    <thead className="text-sm text-muted">
-                      <tr className="[&>th]:pr-4">
-                        <th className="p-3">Compressor</th>
-                        {head("Size (KB)", "size")}
-                        {head("% saved", "saved")}
-                        {head("Compress MB/s", "compress")}
-                        {head("Decompress MB/s", "decompress")}
-                        {head(`Time to user (${mode})`, "time")}
-                        {head("Weissman", "weissman")}
-                        <th>Browser</th>
-                      </tr>
-                    </thead>
-                    <tbody className="font-mono">
-                      {rows.map((r) => (
-                        <Row
-                          key={`${r.compressor}-${r.setting}`}
-                          r={r}
-                          mode={mode}
-                          analysis={analysis}
-                          score={cells[`${r.compressor}/${r.setting}`]}
-                          rank={ranked.indexOf(`${r.compressor}/${r.setting}`) + 1}
-                        />
-                      ))}
-                    </tbody>
-                  </table>
+                <div role="tablist" className="flex gap-1">
+                  {(
+                    [
+                      ["table", "Results table"],
+                      ["chart", "Delivery time chart"],
+                    ] as const
+                  ).map(([id, label]) => (
+                    <button
+                      key={id}
+                      role="tab"
+                      aria-selected={view === id}
+                      onClick={() => setView(id)}
+                      className={`rounded-lg px-3 py-1 text-sm font-bold ${
+                        view === id ? "bg-deep text-white" : "bg-card text-muted"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
                 </div>
-                <WeissmanControl
-                  unit={unit}
-                  baseline={baseline}
-                  onUnit={pickUnit}
-                  onBaseline={pickBaseline}
-                  changed={changed}
-                  cells={cells}
-                />
+                {view === "table" ? (
+                  <ResultsTable rows={rows} mode={mode} analysis={analysis} cells={cells} ranked={ranked} />
+                ) : (
+                  <DeliveryChart analysis={analysis} mode={mode} />
+                )}
               </>
             )}
           </div>
-          <div className="min-w-0 space-y-6">
+          <div className="min-w-0 space-y-3">
             <ReplayCard
               text={preview?.text ?? null}
               fileBytes={preview?.bytes ?? 0}
               runId={runId}
               tall={status === "done"}
             />
-            {status !== "done" && <MetricsBox latest={busy ? latest : null} />}
+            {status === "done" && analysis ? (
+              <WeissmanControl
+                unit={unit}
+                baseline={baseline}
+                onUnit={pickUnit}
+                onBaseline={pickBaseline}
+                note={changeNote}
+              />
+            ) : (
+              <MetricsBox latest={busy ? latest : null} />
+            )}
           </div>
         </div>
       </main>
     </TooltipProvider>
-  );
-}
-
-function Row({
-  r,
-  mode,
-  analysis,
-  score,
-  rank,
-}: {
-  r: JobResult;
-  mode: Mode;
-  analysis: Analysis | null;
-  score: ScoreCell | undefined;
-  rank: number;
-}) {
-  const color = COLORS[r.compressor as CompressorName];
-  const key = `${r.compressor}/${r.setting}`;
-  const mbps = (s: number) => (r.original_bytes / 1e6 / s).toFixed(1);
-  const rec = analysis?.recommendation[mode];
-  const isWinner = rec?.winner && `${rec.winner.compressor}/${rec.winner.setting}` === key;
-  const isRunnerUp =
-    rec?.near_tie && rec.runner_up && `${rec.runner_up.compressor}/${rec.runner_up.setting}` === key;
-  const times = analysis?.rows[key];
-  const time = times ? (mode === "static" ? times.static_s : times.dynamic_s) : null;
-  return (
-    <tr
-      className="border-t border-line"
-      style={isWinner || isRunnerUp ? { background: `color-mix(in srgb, ${color} ${isWinner ? 16 : 9}%, white)` } : undefined}
-    >
-      <td className="p-3" style={{ borderLeft: `6px solid ${color}` }}>
-        {r.compressor} ({r.setting})
-        {isWinner && <span className="ml-2 text-xs font-bold text-deep">{rec?.near_tie ? "PICK (TIE)" : "PICK"}</span>}
-        {isRunnerUp && <span className="ml-2 text-xs font-bold text-muted">TIED</span>}
-      </td>
-      {r.status === "failed" ? (
-        <td colSpan={6}>failed</td>
-      ) : (
-        <>
-          <td>{(r.compressed_bytes / 1000).toFixed(1)}</td>
-          <td>{((1 - r.compressed_bytes / r.original_bytes) * 100).toFixed(1)}%</td>
-          <td>{mbps(r.compress_s)}</td>
-          <td>{mbps(r.decompress_s)}</td>
-          <td className="font-semibold">{time === null ? "…" : formatTime(time)}</td>
-          <td className="font-semibold" data-testid="weissman-cell">
-            <ScoreView score={score} rank={rank} />
-          </td>
-          <td>
-            <BrowserCell compressor={r.compressor} />
-          </td>
-        </>
-      )}
-    </tr>
-  );
-}
-
-function BrowserCell({ compressor }: { compressor: string }) {
-  if (compressor === "zstd")
-    return (
-      <span title="Supported in Chromium and Firefox; Safari support has lagged.">✓*</span>
-    );
-  if (BROWSER_SUPPORTED.has(compressor)) return <span>✓</span>;
-  return <span title="Not a browser Content-Encoding.">—</span>;
-}
-
-function ScoreView({ score, rank }: { score: ScoreCell | undefined; rank: number }) {
-  if (!score) return <span>…</span>;
-  if (score.status === "undefined")
-    return (
-      <span title={score.note} className="text-muted">
-        undefined
-      </span>
-    );
-  return (
-    <span title={score.note || undefined}>
-      {score.value?.toFixed(2)}
-      {score.status === "flagged" && <span className="ml-1 text-brotli">⚠</span>}
-      {rank > 0 && <span className="ml-1 text-xs text-muted">#{rank}</span>}
-    </span>
   );
 }

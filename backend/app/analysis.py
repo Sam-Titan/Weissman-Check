@@ -152,7 +152,11 @@ def analyse(results: Iterable[JobResult]) -> Analysis:
         original_bytes=rows[0].original_bytes if rows else 0,
         rows={
             f"{r.compressor}/{r.setting}": RowTimes(
-                static_s=static_time(r), dynamic_s=dynamic_time(r)
+                compress_s=r.compress_s,
+                transfer_s=transfer_s(r.compressed_bytes),
+                decompress_s=r.decompress_s,
+                static_s=static_time(r),
+                dynamic_s=dynamic_time(r),
             )
             for r in rows
         },

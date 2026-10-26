@@ -64,7 +64,7 @@ export default function ReplayCard({ text, fileBytes, runId, tall }: Props) {
   return (
     <motion.section
       layout
-      animate={{ height: tall ? 640 : 380 }}
+      animate={{ height: tall ? 470 : 380 }}
       transition={{ duration: 0.3 }}
       className="flex flex-col overflow-hidden rounded-xl border border-line bg-card p-5"
       aria-label="Replay"

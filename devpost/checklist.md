@@ -92,7 +92,7 @@ Build mode: fast
 ## Hands-on Checkpoints
 
 - [ ] Early usable behavior explored — after slice 2 (real results plus the static/dynamic flip)
-- [ ] Core journey explored — after slice 5 (kernel complete: real results, banner, replay, Weissman)
+- [x] Core journey explored — after slice 5 (kernel complete: real results, banner, replay, Weissman)
 - [ ] Final kick-the-tires exploration and feedback completed
 
 ## Final Review
@@ -116,3 +116,6 @@ Activity mode: [not started]
 - Playwright MCP could not find Chrome here, so browser checks use the Playwright library with its own Chromium from a scratch script instead.
 - Added a 2-second `ping` event and a browser-side stall watchdog — behind the Vite proxy a killed server leaves the event stream hanging without any error, so "Lost connection" never showed; the benchmark now also runs in a worker thread so pings flow during slow jobs, and it stops after the current job if the browser leaves.
 - Banner and table gained near-tie handling, a time-to-user column, selected-sample state and browser-column marks after early feedback (check #1) — near-ties (brotli vs zstd within about 1 ms) could flip between runs.
+- Results view reworked after check #2 — the 8-column table ran numbers together and the page scrolled at 1440×900, so the table is compact with fixed columns, the Weissman panel moved under the replay card, and the banner has a fixed height.
+- Delivery time chart added (not in the original plan; the learner's request) — a stacked compress/transfer/decompress bar per run that follows the static/dynamic toggle; it sits in a tab beside the table so the view fits without scrolling. `spec.md` (Components, Analysis payload, File Structure) and `prd.md` (results layout, What We're Building) were updated to match; the chart rides on slice 5's results view and needs no new slice.
+- Weissman defaults to milliseconds with the seconds case as the "break it" demo, and its note now appears only after a change and describes it — the original behaviour showed a generic note and a detached reason list.

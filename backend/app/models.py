@@ -50,8 +50,13 @@ class ModeRecommendation(BaseModel):
 
 
 class RowTimes(BaseModel):
-    static_s: float
-    dynamic_s: float
+    """Time to the user: the three parts (for the delivery chart) and the totals per mode."""
+
+    compress_s: float
+    transfer_s: float
+    decompress_s: float
+    static_s: float  # transfer + decompress
+    dynamic_s: float  # compress + transfer + decompress
 
 
 class Recommendation(BaseModel):

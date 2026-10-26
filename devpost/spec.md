@@ -11,7 +11,7 @@ Weissman Check has two programs that run on your laptop.
 - **The browser app** (React + TypeScript) is everything you see: the hero page, the dropbox, the compressor carousel, the progress bar, the replay card and the results. It also does the cheap, instant work on its own: checking that a file is text, giving the entropy verdict, and computing the **replay** (the simplified LZ-style pass over the first ~8 KB of the file).
 - **The Python server** (FastAPI) does the real work. It takes the uploaded file and runs it through gzip, brotli, zstd, lz4, xz and bzip2 at a fast and a strong setting. Every run is timed (compress time and decompress time, each the **median of several repeats**), and its real compressed bytes are kept in memory so the download buttons can hand them back.
 
-The server tells the browser about each finished run as soon as it is done (a **stream of events**, Server-Sent Events), so the 12-segment bar fills one segment at a time and the metrics box updates live. When the last run finishes, the **server computes the answer** (one place, in Python) and sends it in the final `done` event. The browser only decides which precomputed piece to show:
+The server tells the browser about each finished run as soon as it is done (a **stream of events**, Server-Sent Events), so the 12-segment bar fills one segment at a time and the metrics box updates live. When the last run finishes, the **server computes the answer** (one place, in Python) and sends it in the final `done` event. The browser only decides which precomputed piece to show (including the three parts of each run's delivery time for the chart):
 
 - **Recommendation rule.** For each run, `time to the user = (compress time, dynamic only) + size ÷ network speed + decompress time`. The smallest time wins. Static content is compressed once and served many times, so compress time is free. Dynamic content is compressed on every request, so it is not. That is the only reason the winner can flip when you press the toggle. The server sends the static winner, the dynamic winner and the browser-best pick for each mode.
 - **Weissman score.** `W = (r / r̄) × (log T̄ / log T)`, where `r` is the compression ratio, `T` is the compress time, and `r̄`, `T̄` are the same for the baseline (gzip level 6 by default). The server precomputes it for **all 9 combinations** of time unit (3) × baseline (3), so changing the unit or baseline in the "break it" control just switches which precomputed table is shown. Cases where the maths breaks come back as `undefined` or `flagged` with a one-line explanation, never NaN.
@@ -115,6 +115,8 @@ dynamic_time  = compress_s + transfer_s + decompress_s
 winner(mode)  = argmin of that mode's time over successful rows
 browser_best(mode) = same, restricted to {gzip, brotli, zstd}
 ```
+- **Time parts (for the delivery chart and the table's "To user" column):** `analysis.rows["compressor/setting"]` carries `compress_s`, `transfer_s`, `decompress_s`, and the two totals `static_s = transfer + decompress` and `dynamic_s = compress + transfer + decompress`. The browser only draws them.
+- **Near ties:** if the runner-up's time is within 5% of the fastest, the winner is picked by tie-break (browser-supported first, then smaller output) and the mode's recommendation carries `near_tie`, `runner_up` and `tie_reason`. Added after early feedback (see `checklist.md > Revisions`).
 - **Recommendation payload:** for `static` and `dynamic`: `winner`, `browser_best`, each with compressor, setting, size, % saved, decompress MB/s, and delivery time; plus `network_mbps` so the banner can state the assumed speed. If the winner is already a browser-supported compressor, `browser_best` equals it and the banner shows one line; otherwise the banner shows both (`prd.md > Results: recommendation banner`). If no row succeeded, `winner` is null.
 - **Weissman payload:** `weissman[unit][baseline]` for unit ∈ {`s`, `ms`, `us`} × baseline ∈ {`gzip6`, `gzip1`, `zstd3`} (9 tables). Each table maps `compressor/setting` to a score object `{status, value, note}`:
 
@@ -176,17 +178,20 @@ PRD ref: `prd.md > Replay card`.
 
 ### Frontend: Recommendation Banner
 `RecommendationBanner.tsx` — shows `analysis.recommendation[mode]`; no maths, only formatting. The static/dynamic toggle (Radix toggle-group) switches `mode` in the reducer.
-- Banner format: "Ship **brotli (strong)** for static assets: 78% smaller, decompresses at 410 MB/s · at 20 Mbit/s" (the speed comes from `analysis.network_mbps`).
-- If `browser_best` differs from `winner`, the banner shows both: "Fastest to deliver overall: xz (strong). Best for browsers: brotli (strong)."
+- Banner format: a **fixed-height** block of four fixed lines so it never resizes between modes or samples: (1) "Ship **brotli (strong)**"; (2) one small note line (the near-tie explanation, or "Fastest overall. Best for browsers: brotli (strong)." when `browser_best` differs from `winner`, otherwise empty); (3) "For static assets: reaches a user in 65 ms, 90% smaller"; (4) the footnote "Fastest means shortest time to reach a user at 20 Mbit/s." (the speed comes from `analysis.network_mbps`). The banner ranks by time to the user, so the headline leads with that time, not decompress speed.
 - If `winner` is null (every run failed), the banner says the run failed.
 PRD ref: `prd.md > Results: recommendation banner`.
 
 ### Frontend: Results Table
-`ResultsTable.tsx` — one row per successful or failed normal job, coloured by compressor; columns: size, % saved, **bits per byte** (`compressed_bytes × 8 / original_bytes`, so the user can compare it with the entropy verdict), compress MB/s, decompress MB/s, Weissman, download; browser-supported marker for gzip/brotli/zstd; "?" tooltip on each metric heading; failed rows show "failed". Default order is delivery time for the current mode (read from the analysis). The Weissman cell renders the score object: `ok` shows the number, `flagged` shows the number with a warning marker and the note on hover, `undefined` shows "undefined" with the note on hover.
+`ResultsTable.tsx` — compact, single-line rows with fixed-width, right-aligned, tabular-number columns: compressor, size (KB), saved, compress MB/s, decompress MB/s, **To user** (time to the user for the current mode, from `analysis.rows`), Weissman, browser. Rows are coloured by compressor; the pick gets ★ and a tinted row, a near-tie runner-up gets ≈ and a lighter tint; a legend line sits under the table (including the zstd caveat). The browser column shows ✓ for gzip/brotli, ✓* for zstd (tooltip: "Supported in Chromium and Firefox; Safari support has lagged."), and — for lz4/xz/bzip2 (tooltip: "Not a browser Content-Encoding."). "?" tooltips on metric headings. Failed rows show "failed". The Weissman cell renders the score object: `ok` shows the number, `flagged` the number with ⚠, `undefined` a small neutral "undefined" pill; each reason sits in a tooltip on that cell. A "#n" rank beside each number is a sort of the precomputed values, not maths. The bits-per-byte column and default delivery-time ordering are still to do (slice 7).
 PRD ref: `prd.md > Results: table`.
 
+### Frontend: Delivery Chart
+`DeliveryChart.tsx` — the unique kernel made visible: one stacked horizontal bar per run (compress / transfer / decompress at the assumed network speed), in the compressor's colour with three shades, sorted by total time for the current mode. It follows the Static/Dynamic toggle: in static mode the compress segment is zero-width and the legend greys it ("compress (free in static)"). The winner has a ring (a near-tie runner-up a lighter one). The axis ends at 3× the winner's time and longer bars are clipped with a ▶ marker, so one slow compressor cannot flatten the rest. Plain divs, no chart library; all values come from `analysis.rows`. It sits in a tab next to the results table so the results view fits a 1440×900 screen without scrolling.
+PRD ref: `prd.md > Results: delivery time chart`.
+
 ### Frontend: Weissman "Break It" Control
-`WeissmanControl.tsx` — two selectors (time unit, baseline) that choose `analysis.weissman[unit][baseline]` to display. No score maths in the frontend. A short note under the control states what just changed and that any single score can mislead; when a flagged or undefined cell is on screen, the note also shows that cell's one-line explanation.
+`WeissmanControl.tsx` — two selectors (time unit, baseline) that choose `analysis.weissman[unit][baseline]` to display. The panel lives in the right column under the replay card. The default unit is **milliseconds**; seconds is the "break it" demo. No score maths in the frontend. Nothing is shown under the selectors until the user changes one; then a note describes the actual change (who tops the table now and who it replaced, and how many scores are flagged or undefined compared with before), counted from the precomputed tables. Each flagged or undefined reason is a tooltip on its own cell, not a list.
 PRD ref: `prd.md > Results: Weissman "break it" control`.
 
 **Worked example (illustrative numbers, for the learner's question; the app shows real ones).** 1,000,000-byte file, 20 Mbit/s = 2,500,000 B/s:
@@ -278,6 +283,7 @@ weissman-check/
 │           ├── ReplayCard.tsx
 │           ├── RecommendationBanner.tsx
 │           ├── ResultsTable.tsx
+│           ├── DeliveryChart.tsx   # stacked compress/transfer/decompress bars
 │           ├── WeissmanControl.tsx
 │           └── Tooltip.tsx     # Radix tooltip wrapper, our styling
 └── devpost/                    # planning docs (scope, prd, spec, checklist)

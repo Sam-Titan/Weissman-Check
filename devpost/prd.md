@@ -44,7 +44,8 @@ Two surfaces: the hero page and the compressor page. There is no nav bar and the
 - **Results content, top to bottom:**
   1. The recommendation banner (one line, with the static/dynamic toggle on it).
   2. The results table.
-  3. The Weissman "break it" control.
+  3. The Weissman "break it" control, in the right column under the replay card (default time unit: milliseconds).
+- A **delivery time chart** (stacked compress / transfer / decompress bars per run) sits in a tab next to the results table and follows the static/dynamic toggle.
 
 ## Look and Feel
 Established by the learner:
@@ -150,7 +151,7 @@ Six compressors: gzip, brotli, zstd, lz4, xz, bzip2. Each is run at a fast and a
 - Compressor carousel with six cards, include checkboxes, and a narration card per compressor.
 - Real benchmark of gzip, brotli, zstd, lz4, xz and bzip2, each at fast and strong, with the 12-segment progress bar.
 - Replay card with repeat highlights, labels, a bytes-saved counter, and Stop/Restart.
-- Results: recommendation banner with static/dynamic toggle, results table with per-row download, "?" tooltips on metrics, and the Weissman "break it" control.
+- Results: recommendation banner with static/dynamic toggle, a delivery time chart showing where the time goes, results table with per-row download, "?" tooltips on metrics, and the Weissman "break it" control.
 - The empty and error states above, and Try another file.
 - The flat, bright, 2013–2015 look.
 

@@ -98,3 +98,10 @@ def test_per_row_times_are_exposed():
     assert result.original_bytes == 1_000_000
     t = result.rows["brotli/strong"]
     assert round(t.static_s, 3) == 0.066 and round(t.dynamic_s, 3) == 1.166
+
+
+def test_chart_parts_add_up_to_the_totals():
+    t = analyse([ZSTD_FAST, BROTLI_STRONG]).rows["zstd/fast"]
+    assert (t.compress_s, round(t.transfer_s, 3), t.decompress_s) == (0.012, 0.092, 0.004)
+    assert t.static_s == t.transfer_s + t.decompress_s
+    assert t.dynamic_s == t.compress_s + t.transfer_s + t.decompress_s

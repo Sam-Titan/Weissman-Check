@@ -35,6 +35,9 @@ export interface ModeRecommendation {
 }
 
 export interface RowTimes {
+  compress_s: number;
+  transfer_s: number;
+  decompress_s: number;
   static_s: number;
   dynamic_s: number;
 }
