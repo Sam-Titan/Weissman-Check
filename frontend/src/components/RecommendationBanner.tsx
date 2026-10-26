@@ -49,16 +49,16 @@ export default function RecommendationBanner({
     line = `For ${MODE_NOTE[mode]}: reaches a user in ${formatTime(winner.delivery_s)}, ${winner.percent_saved.toFixed(0)}% smaller`;
   }
   return (
-    <section className="flex h-32 items-center justify-between gap-4 overflow-hidden rounded-xl bg-deep px-5 text-white">
+    <section className="flex h-32 shrink-0 items-center justify-between gap-4 overflow-hidden rounded-xl bg-deep px-5 text-white [@media(max-height:760px)]:h-24">
       <div className="min-w-0 space-y-0.5">
-        <p className="truncate text-3xl font-black leading-tight tracking-tight">{head}</p>
+        <p className="truncate text-3xl font-black leading-tight tracking-tight [@media(max-height:760px)]:text-2xl">{head}</p>
         <p className="truncate text-sm font-bold text-white/90" title={note}>
           {note}
         </p>
         <p className="truncate text-lg font-bold" title={line}>
           {line}
         </p>
-        <p className="text-xs font-bold text-white/70">
+        <p className="text-xs font-bold text-white/70 [@media(max-height:760px)]:hidden">
           Fastest means shortest time to reach a user at {analysis.network_mbps} Mbit/s.
         </p>
       </div>

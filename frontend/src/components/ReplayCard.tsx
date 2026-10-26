@@ -1,4 +1,3 @@
-import { motion } from "motion/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { NARRATOR_INTRO } from "../content/narration";
 import { bytesSaved, findMatches, REF_COST } from "../lib/lz77";
@@ -62,11 +61,10 @@ export default function ReplayCard({ text, fileBytes, runId, tall }: Props) {
   const latest = seen.at(-1);
 
   return (
-    <motion.section
-      layout
-      animate={{ height: tall ? 470 : 380 }}
-      transition={{ duration: 0.3 }}
-      className="flex flex-col overflow-hidden rounded-xl border border-line bg-card p-5"
+    <section
+      className={`flex min-h-[220px] flex-col overflow-hidden rounded-xl border border-line bg-card p-5 min-[900px]:min-h-0 min-[900px]:flex-1 max-[899px]:h-[380px] ${
+        tall ? "" : "min-[900px]:max-h-[380px]"
+      }`}
       aria-label="Replay"
     >
       <h2 className="text-sm font-bold text-muted">
@@ -123,7 +121,7 @@ export default function ReplayCard({ text, fileBytes, runId, tall }: Props) {
           )}
         </>
       )}
-    </motion.section>
+    </section>
   );
 }
 

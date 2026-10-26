@@ -62,6 +62,7 @@ export default function App() {
   const [changeNote, setChangeNote] = useState<string | null>(null);
   const [view, setView] = useState<"scorecard" | "table" | "chart">("scorecard");
   const [selected, setSelected] = useState<string | null>(null);
+  const [tour, setTour] = useState({ open: true, key: 0 });
   const [serverRun, setServerRun] = useState<string | null>(null);
   const [downloadMessage, setDownloadMessage] = useState("");
   const closeRef = useRef<() => void>(() => {});
@@ -174,25 +175,33 @@ export default function App() {
 
   return (
     <TooltipProvider>
-      <main className="mx-auto max-w-[1400px] space-y-3 p-4 max-[899px]:overflow-x-hidden">
-        <header className="flex flex-wrap items-center gap-x-4 gap-y-2">
+      <main className="mx-auto flex max-w-[1400px] flex-col gap-3 p-4 max-[899px]:overflow-x-hidden min-[900px]:h-dvh min-[900px]:overflow-hidden">
+        <header className="flex shrink-0 flex-wrap items-center gap-x-4 gap-y-2">
           <h1 className="text-2xl font-black">Weissman Check</h1>
           {status === "done" && rows.length > 0 && (
-            <>
-              <span className="font-mono text-xs text-muted">
-                {file?.file.name} · Original: {formatSize(rows[0].original_bytes)}
-              </span>
+            <span className="font-mono text-xs text-muted">
+              {file?.file.name} · Original: {formatSize(rows[0].original_bytes)}
+            </span>
+          )}
+          <div className="ml-auto flex gap-2">
+            <button
+              onClick={() => setTour((t) => ({ open: true, key: t.key + 1 }))}
+              className="rounded-xl border-2 border-line bg-card px-3 py-1 text-sm font-bold text-deep"
+            >
+              Walkthrough
+            </button>
+            {status === "done" && (
               <button
                 onClick={tryAnother}
-                className="ml-auto rounded-xl border-2 border-accent bg-card px-3 py-1 text-sm font-bold text-accent"
+                className="rounded-xl border-2 border-accent bg-card px-3 py-1 text-sm font-bold text-accent"
               >
                 Try another file
               </button>
-            </>
-          )}
+            )}
+          </div>
         </header>
-        <div className="grid items-start gap-4 min-[900px]:grid-cols-[minmax(0,1fr)_420px]">
-          <div className="min-w-0 space-y-3">
+        <div className="grid gap-4 min-[900px]:min-h-0 min-[900px]:flex-1 min-[900px]:grid-cols-[minmax(0,1fr)_420px] min-[900px]:grid-rows-[minmax(0,1fr)]">
+          <div className="flex min-w-0 flex-col gap-3 min-[900px]:min-h-0 min-[900px]:overflow-y-auto">
             {message && <p className="text-red-600">{message}</p>}
             {picking && (
               <>
@@ -239,7 +248,7 @@ export default function App() {
             {status === "done" && analysis && (
               <>
                 <RecommendationBanner analysis={analysis} mode={mode} onMode={setMode} />
-                <div role="tablist" className="flex gap-1">
+                <div role="tablist" className="flex shrink-0 gap-1">
                   {(
                     [
                       ["scorecard", "Scorecard"],
@@ -260,7 +269,8 @@ export default function App() {
                     </button>
                   ))}
                 </div>
-                {downloadMessage && <p className="text-sm font-bold text-red-600">{downloadMessage}</p>}
+                {downloadMessage && <p className="shrink-0 text-sm font-bold text-red-600">{downloadMessage}</p>}
+                <div className="min-h-0 flex-1 max-[899px]:flex-none min-[900px]:overflow-auto">
                 {view === "scorecard" ? (
                   <Scorecard
                     analysis={analysis}
@@ -295,11 +305,11 @@ export default function App() {
                 ) : (
                   <DeliveryChart analysis={analysis} mode={mode} />
                 )}
+                </div>
               </>
             )}
           </div>
-          <div className="min-w-0 space-y-3">
-            <NarratorBox />
+          <div className="flex min-w-0 flex-col gap-3 min-[900px]:min-h-0">
             <ReplayCard
               text={file?.text ?? null}
               fileBytes={file?.file.size ?? 0}
@@ -310,6 +320,7 @@ export default function App() {
           </div>
         </div>
       </main>
+      {tour.open && <NarratorBox key={tour.key} onClose={() => setTour((t) => ({ ...t, open: false }))} />}
     </TooltipProvider>
   );
 }

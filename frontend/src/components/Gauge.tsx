@@ -48,12 +48,12 @@ export default function Gauge({
   const pos = t === null ? 0 : Math.min(1, Math.max(0, t));
   return (
     <figure
-      className={`flex min-w-0 flex-col items-center px-2 pb-2 pt-3 ${bare ? "" : "rounded-xl border border-line bg-card"}`}
+      className={`flex h-full min-h-0 min-w-0 flex-col items-center px-2 pb-1 pt-2 ${bare ? "" : "rounded-xl border border-line bg-card"}`}
       data-testid="gauge"
       data-title={title}
     >
       <figcaption className="text-xs font-black uppercase tracking-wide text-muted">{title}</figcaption>
-      <svg viewBox="0 0 220 112" className="w-full max-w-[190px]" role="img" aria-label={`${title}: ${valueText}`}>
+      <svg viewBox="0 0 220 112" className="min-h-0 w-full max-w-[230px] flex-1 max-[899px]:h-32 max-[899px]:flex-none" role="img" aria-label={`${title}: ${valueText}`}>
         {zones.map((z) => (
           <g key={z.label}>
             <path

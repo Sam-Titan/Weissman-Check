@@ -47,8 +47,8 @@ export default function ResultsTable({
     </th>
   );
   return (
-    <div className="rounded-xl border border-line bg-card">
-      <div className="max-h-[calc(100vh-17rem)] overflow-auto max-[899px]:max-h-none">
+    <div className="flex h-full flex-col rounded-xl border border-line bg-card max-[899px]:h-auto">
+      <div className="min-h-0 flex-1 overflow-auto">
       <table className="w-full min-w-[820px] table-fixed text-sm tabular-nums">
         <colgroup>
           {COLS.map((w, i) => (

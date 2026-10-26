@@ -157,7 +157,7 @@ PRD ref: `prd.md > States and Boundaries`.
 PRD ref: `prd.md > Hero page`.
 
 ### Frontend: Narrator Box
-`NarratorBox.tsx` — tour steps (drop file → pick compressors → run → read results) with Next / Skip tour; Skip leaves the app usable. Its first-step intro text is also shown in the replay card before any file is added.
+`NarratorBox.tsx` — a box that floats over the page (bottom right) with tour steps (drop file → pick compressors → run → read results) with Next / Skip tour; Skip closes it and leaves the app usable, and a **Walkthrough** button in the header brings it back from step 1 at any time. Its first-step intro text is also shown in the replay card before any file is added.
 PRD ref: `prd.md > Narrator and guided tour`.
 
 ### Frontend: Dropbox and File Chip
@@ -210,7 +210,7 @@ PRD ref: `prd.md > Results: scorecard`.
 `WeissmanControl.tsx` (`WeissmanPicker`) — two selectors (time unit, baseline) that choose `analysis.weissman[unit][baseline]`, living inside the Weissman gauge card. The default unit is **milliseconds**; seconds is the "break it" demo. No score maths in the frontend. Nothing is shown under the selectors until the user changes one; then a note describes the actual change (who tops the table now and who it replaced, and how many scores are flagged or undefined compared with before), counted from the precomputed tables. Each flagged or undefined reason is a tooltip on its own table cell, and the gauge shows it for the selected run.
 PRD ref: `prd.md > Results: Weissman "break it" control`.
 
-**Results layout.** Left column: the banner, then tabs **Scorecard** (default) | **Table** | **Delivery chart**. Right column: the narrator box and the replay card. The results view fits 1280×720 without page scrolling (the table and chart scroll inside their cards). Below 900 px wide the columns stack and the table scrolls sideways inside its card; there is no other mobile work.
+**Results layout.** Left column: the banner, then tabs **Scorecard** (default) | **Table** | **Delivery chart**. Right column: the replay card. The page is exactly one viewport tall on screens 900 px wide or more, and the scorecard, table and chart areas share whatever height is left (gauges shrink with the window, the banner and its text get smaller on short screens, and the table and chart scroll inside their cards), so the results view needs no page scroll; it was checked at 1200×600, 1280×720, 1333×660 and 1440×900. Below 900 px wide the columns stack and the table scrolls sideways inside its card; there is no other mobile work.
 
 **Worked example (illustrative numbers, for the learner's question; the app shows real ones).** 1,000,000-byte file, 20 Mbit/s = 2,500,000 B/s:
 

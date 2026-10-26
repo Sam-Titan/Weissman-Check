@@ -17,7 +17,7 @@ export default function DeliveryChart({ analysis, mode }: { analysis: Analysis; 
 
   return (
     <div
-      className="max-h-[calc(100vh-17rem)] overflow-auto rounded-xl border border-line bg-card p-4 max-[899px]:max-h-none"
+      className="rounded-xl border border-line bg-card p-4"
       aria-label="Delivery time chart"
     >
       <div className="mb-3 flex flex-wrap items-center gap-x-5 gap-y-1 text-xs font-bold text-muted">

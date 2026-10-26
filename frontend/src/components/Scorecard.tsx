@@ -55,8 +55,8 @@ export default function Scorecard({
   const baseLabel = baseline === "gzip6" ? "gzip default" : BASELINE_LABELS[baseline];
 
   return (
-    <div className="space-y-2" aria-label="Scorecard">
-      <div className="grid grid-cols-3 gap-1.5 min-[900px]:grid-cols-6" role="listbox" aria-label="Compressor">
+    <div className="flex h-full min-h-0 flex-col gap-2 max-[899px]:h-auto" aria-label="Scorecard">
+      <div className="grid shrink-0 grid-cols-3 gap-1.5 min-[900px]:grid-cols-6" role="listbox" aria-label="Compressor">
         {COMPRESSORS.flatMap((c) =>
           SETTINGS.map((s) => {
             const key = `${c}/${s}`;
@@ -83,7 +83,7 @@ export default function Scorecard({
         )}
       </div>
       {row && (
-        <div className="grid gap-2 min-[900px]:grid-cols-3">
+        <div className="grid min-h-0 flex-1 gap-2 min-[900px]:grid-cols-3 min-[900px]:grid-rows-2">
           <Gauge
             title={`Time to user (${mode})`}
             valueText={formatTime(time as number)}
@@ -121,7 +121,7 @@ export default function Scorecard({
             muted={entropyBits === null}
           />
           <section
-            className="grid min-w-0 items-center gap-1 rounded-xl border border-line bg-card min-[900px]:col-span-2 min-[900px]:grid-cols-[1fr_1.1fr]"
+            className="grid min-h-0 min-w-0 items-center gap-1 rounded-xl border border-line bg-card min-[900px]:col-span-2 min-[900px]:grid-cols-[1fr_1.1fr]"
             aria-label="Weissman gauge"
           >
             <Gauge
@@ -135,7 +135,7 @@ export default function Scorecard({
               tick={{ t: logPos(1, WEISSMAN_LO, WEISSMAN_HI), label: baseLabel }}
               muted={weissmanMuted}
             />
-            <div className="p-2 pr-3">
+            <div className="min-h-0 self-stretch overflow-auto p-2 pr-3">
               <WeissmanPicker
                 unit={unit}
                 baseline={baseline}
@@ -147,7 +147,7 @@ export default function Scorecard({
           </section>
         </div>
       )}
-      <p className="text-xs text-muted">
+      <p className="shrink-0 text-xs text-muted [@media(max-height:760px)]:hidden">
         <span className="mr-1 inline-block h-2 w-2 rounded-full align-middle" style={{ background: GOOD }} />
         Right is always the good end, except entropy, where right means already dense. The black tick marks where
         gzip level 6 lands.
