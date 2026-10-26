@@ -9,13 +9,14 @@ const LITERAL_STEP = 14; // characters of unmatched text covered per tick
 
 interface Props {
   text: string | null; // first 8 KB of the file
+  note?: string | null; // shown instead of the replay for files that are not text
   fileBytes: number;
   runId: number; // changes each time Run is clicked: starts the replay
   tall: boolean; // true once results are showing
 }
 
 /** How LZ-style compressors see your file (simplified replay of the first 8 KB). */
-export default function ReplayCard({ text, fileBytes, runId, tall }: Props) {
+export default function ReplayCard({ text, note = null, fileBytes, runId, tall }: Props) {
   const matches = useMemo(() => (text ? findMatches(text) : []), [text]);
   const [cursor, setCursor] = useState(0);
   const [playing, setPlaying] = useState(false);
@@ -72,7 +73,9 @@ export default function ReplayCard({ text, fileBytes, runId, tall }: Props) {
       bodyClassName="flex flex-col p-4"
     >
       <p className="text-xs font-bold text-muted">Simplified replay</p>
-      {text === null ? (
+      {note ? (
+        <p className="mt-3 font-bold text-ink">{note}</p>
+      ) : text === null ? (
         <p className="mt-3 text-ink">{NARRATOR_INTRO}</p>
       ) : (
         <>

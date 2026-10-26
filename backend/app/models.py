@@ -97,6 +97,15 @@ class GaugeScales(BaseModel):
     gzip_default: GzipDefault | None
 
 
+class AlreadyCompressed(BaseModel):
+    entropy_bits: float
+    best_saved_percent: float
+    reason: Literal[
+        "entropy", "format"
+    ]  # entropy > 7.5, or a known packed format (magic bytes / extension)
+    message: str  # the banner sentence, worded from the actual results
+
+
 class Analysis(BaseModel):
     network_mbps: float
     original_bytes: int
@@ -105,3 +114,4 @@ class Analysis(BaseModel):
     weissman: dict[str, dict[str, dict[str, ScoreCell]]]
     gauges: GaugeScales
     recommendation: Recommendation
+    already_compressed: AlreadyCompressed | None = None

@@ -122,7 +122,7 @@ Six compressors: gzip, brotli, zstd, lz4, xz, bzip2. Each is run at a fast and a
 
 ## States and Boundaries
 - **First use (before any file):** the dropbox with drag-and-drop text and three sample buttons. The replay card shows the narrator's intro. The metrics box lists the metric names greyed out, each with a "?" tooltip.
-- **Binary or image file:** a friendly message, "Weissman Check handles text-like files for now (JSON, CSV, logs, code, HTML). Images and video are coming later." The run is not started.
+- **Binary or already-compressed file (docx, pdf, zip, png, mp3…):** accepted and run normally. The banner says "Already compressed" with the entropy and the best saving, the replay card shows one line instead of the replay, and the table, gauges and chart show the tiny gains.
 - **File over 25 MB:** rejected before upload, with the limit stated.
 - **Empty file:** "This file is empty, nothing to squeeze."
 - **No compressors selected:** Run is disabled, with the hint "Pick at least one compressor."
@@ -174,7 +174,7 @@ Six compressors: gzip, brotli, zstd, lz4, xz, bzip2. Each is run at a fast and a
 - No *Silicon Valley* branding (logos, names or imagery), to keep the look original.
 - No claim that the replay is the compressors' live internal state. It is a labelled explanation.
 - No accounts, saved history, or server-side storage of uploaded files.
-- No binary, image or video input.
+- No special handling of images or video beyond the "Already compressed" verdict (no format-specific codecs).
 
 ## Open Questions
 - Which other Weissman time units and baselines to offer besides the gzip level 6 default. *Assumption: a small set of two or three of each. Can be settled in `4-spec`.*

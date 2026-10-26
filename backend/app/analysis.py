@@ -1,9 +1,11 @@
 """Single source of truth for the answer: pure functions, no I/O."""
 
 import math
+from collections import Counter
 from collections.abc import Callable, Iterable
 
 from .models import (
+    AlreadyCompressed,
     Analysis,
     GaugeScales,
     GzipDefault,
@@ -26,6 +28,65 @@ BASELINES = {
     "zstd3": ("zstd", "baseline"),
 }
 TOO_SMALL_S = 0.001  # every option within 1 ms of the best: the choice does not matter
+PACKED_ENTROPY_BITS = 7.5  # above this many bits per byte the data is already dense
+PACKED_MAGIC = (  # leading bytes of formats that are already compressed (docx/xlsx/pptx are zip)
+    b"PK\x03\x04",
+    b"PK\x05\x06",
+    b"\x1f\x8b",
+    b"BZh",
+    b"\xfd7zXZ\x00",
+    b"\x28\xb5\x2f\xfd",
+    b"7z\xbc\xaf\x27\x1c",
+    b"Rar!",
+    b"%PDF-",
+    b"\x89PNG\r\n\x1a\n",
+    b"\xff\xd8\xff",
+    b"GIF8",
+    b"ID3",
+    b"\xff\xfb",
+    b"\xff\xf3",
+    b"OggS",
+    b"fLaC",
+    b"\x1a\x45\xdf\xa3",
+)
+PACKED_EXTENSIONS = {
+    "docx",
+    "xlsx",
+    "pptx",
+    "odt",
+    "ods",
+    "odp",
+    "epub",
+    "jar",
+    "apk",
+    "zip",
+    "gz",
+    "tgz",
+    "bz2",
+    "xz",
+    "zst",
+    "br",
+    "7z",
+    "rar",
+    "pdf",
+    "png",
+    "jpg",
+    "jpeg",
+    "gif",
+    "webp",
+    "avif",
+    "heic",
+    "mp3",
+    "aac",
+    "ogg",
+    "flac",
+    "m4a",
+    "mp4",
+    "m4v",
+    "mov",
+    "mkv",
+    "webm",
+}
 TIE_FRACTION = 0.05  # a runner-up within 5% of the winner's time counts as a near tie
 
 
@@ -174,7 +235,47 @@ def _gauges(rows: list[JobResult], everything: dict[tuple[str, str], JobResult])
     )
 
 
-def analyse(results: Iterable[JobResult]) -> Analysis:
+def _entropy_bits(data: bytes) -> float:
+    n = len(data)
+    return -sum(c / n * math.log2(c / n) for c in Counter(data).values()) if n else 0.0
+
+
+def _is_packed_format(data: bytes, filename: str) -> bool:
+    head = data[:16]
+    riff_media = head[:4] == b"RIFF" and head[8:12] in (b"WEBP", b"AVI ")
+    mp4 = head[4:8] == b"ftyp"
+    ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
+    return head.startswith(PACKED_MAGIC) or riff_media or mp4 or ext in PACKED_EXTENSIONS
+
+
+def _already_compressed(
+    rows: list[JobResult], data: bytes, filename: str
+) -> AlreadyCompressed | None:
+    if not rows or not data:
+        return None
+    bits = _entropy_bits(data)
+    dense = bits > PACKED_ENTROPY_BITS
+    if not dense and not _is_packed_format(data, filename):
+        return None
+    best = max((1 - r.compressed_bytes / r.original_bytes) * 100 for r in rows)
+    what = "mostly packed data" if dense else "a packed file format"
+    ending = (
+        "Ship it as is."
+        if best < 5
+        else "Some gain is possible, but it is probably not worth the extra work."
+    )
+    return AlreadyCompressed(
+        entropy_bits=bits,
+        best_saved_percent=best,
+        reason="entropy" if dense else "format",
+        message=(
+            f"Already compressed: this file is {what} (entropy {bits:.2f} bits/byte). "
+            f"Compressing it again saves about {max(best, 0):.1f}% at best. {ending}"
+        ),
+    )
+
+
+def analyse(results: Iterable[JobResult], data: bytes = b"", filename: str = "") -> Analysis:
     results = list(results)
     rows = [r for r in results if r.status == "ok" and not r.is_baseline]
     everything = {(r.compressor, r.setting): r for r in results if r.status == "ok"}
@@ -199,4 +300,5 @@ def analyse(results: Iterable[JobResult]) -> Analysis:
             static=_recommend(rows, static_time),
             dynamic=_recommend(rows, dynamic_time),
         ),
+        already_compressed=_already_compressed(rows, data, filename),
     )

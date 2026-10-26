@@ -38,9 +38,9 @@ export default function Dropbox({
           over ? "bg-sun" : "bg-mint"
         }`}
       >
-        <p className="font-pixel text-lg font-bold">Drop a text-like file here</p>
+        <p className="font-pixel text-lg font-bold">Drop a file here</p>
         <p className="text-sm">
-          JSON, CSV, logs, code, HTML.{" "}
+          Text, logs, code, or anything already compressed (up to 25 MB).{" "}
           <button type="button" onClick={() => input.current?.click()} className="font-bold text-accent underline">
             Or choose a file
           </button>

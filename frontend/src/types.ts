@@ -62,7 +62,15 @@ export interface GaugeScales {
   } | null;
 }
 
+export interface AlreadyCompressed {
+  entropy_bits: number;
+  best_saved_percent: number;
+  reason: "entropy" | "format";
+  message: string;
+}
+
 export interface Analysis {
+  already_compressed: AlreadyCompressed | null;
   gauges: GaugeScales;
   network_mbps: number;
   original_bytes: number;

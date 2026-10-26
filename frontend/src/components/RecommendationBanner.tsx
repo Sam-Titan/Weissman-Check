@@ -25,10 +25,14 @@ export default function RecommendationBanner({
 }) {
   const { winner, browser_best, near_tie, runner_up, tie_reason, too_small_to_matter } =
     analysis.recommendation[mode];
+  const packed = analysis.already_compressed;
   let head = "Every compressor failed";
   let note = "";
   let line = "";
-  if (winner && too_small_to_matter) {
+  if (packed) {
+    head = "Already compressed";
+    note = packed.message;
+  } else if (winner && too_small_to_matter) {
     head = "Too small to matter";
     note = `Every option reaches a user in ~${formatTime(winner.delivery_s)}.`;
     line = "Any browser-supported compressor is fine; gzip is the safe default.";
@@ -54,13 +58,13 @@ export default function RecommendationBanner({
       <div className="flex h-28 items-center justify-between gap-4 px-5 [@media(max-height:760px)]:h-[5.5rem]">
         <div className="min-w-0 space-y-0.5">
           <p className="truncate font-pixel text-3xl font-bold leading-tight [@media(max-height:760px)]:text-2xl">{head}</p>
-          <p className="truncate text-sm font-bold" title={note}>
+          <p className={`text-sm font-bold ${packed ? "line-clamp-3" : "truncate"}`} title={note}>
             {note}
           </p>
           <p className="truncate text-lg font-bold" title={line}>
             {line}
           </p>
-          <p className="text-xs font-bold opacity-70 [@media(max-height:760px)]:hidden">
+          <p className={`text-xs font-bold opacity-70 [@media(max-height:760px)]:hidden ${packed ? "hidden" : ""}`}>
             Fastest means shortest time to reach a user at {analysis.network_mbps} Mbit/s.
           </p>
         </div>

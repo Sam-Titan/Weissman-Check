@@ -2,7 +2,7 @@ import { useRef, useState } from "react";
 import { createRun, downloadRun, fetchSample, openEvents } from "./api";
 import { COMPRESSORS, type CompressorName } from "./lib/compressors";
 import { entropyOf, type Entropy } from "./lib/entropy";
-import { validateFile } from "./lib/validate";
+import { looksBinary, SNIFF_BYTES, validateFile } from "./lib/validate";
 import CompressorCarousel from "./components/CompressorCarousel";
 import Dropbox from "./components/Dropbox";
 import Hero from "./components/Hero";
@@ -54,7 +54,7 @@ export default function App() {
   const [analysis, setAnalysis] = useState<Analysis | null>(null);
   const [mode, setMode] = useState<Mode>("static");
   const [active, setActive] = useState<string | null>(null);
-  const [file, setFile] = useState<{ file: File; entropy: Entropy; text: string } | null>(null);
+  const [file, setFile] = useState<{ file: File; entropy: Entropy; text: string | null } | null>(null);
   const [fileMessage, setFileMessage] = useState("");
   const [included, setIncluded] = useState<CompressorName[]>([...COMPRESSORS]);
   const [runId, setRunId] = useState(0);
@@ -80,10 +80,11 @@ export default function App() {
     setMessage("");
     setActive(sample);
     setRunId(0);
+    const binary = looksBinary(new Uint8Array(await f.slice(0, SNIFF_BYTES).arrayBuffer()));
     setFile({
       file: f,
       entropy: entropyOf(new Uint8Array(await f.arrayBuffer())),
-      text: await f.slice(0, REPLAY_BYTES).text(),
+      text: binary ? null : await f.slice(0, REPLAY_BYTES).text(),
     });
   }
 
@@ -317,6 +318,13 @@ export default function App() {
           <div className="flex min-w-0 flex-col gap-3 min-[900px]:min-h-0">
             <ReplayCard
               text={file?.text ?? null}
+              note={
+                analysis?.already_compressed
+                  ? "Replay is for text; this file's bytes are already compressed."
+                  : file && file.text === null
+                    ? "Replay is for text; this file looks like binary data."
+                    : null
+              }
               fileBytes={file?.file.size ?? 0}
               runId={runId}
               tall={status === "done"}

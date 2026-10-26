@@ -80,7 +80,7 @@ def run_events(run_id: str) -> StreamingResponse:
                     if out is not None:
                         run.outputs[(result.compressor, result.setting)] = out
                     events.put(("result", result.model_dump()))
-                events.put(("done", analyse(results).model_dump()))
+                events.put(("done", analyse(results, run.data, run.name).model_dump()))
             except Exception as exc:  # surface unexpected failures instead of hanging the stream
                 events.put(("error", {"message": str(exc) or type(exc).__name__}))
             finally:
