@@ -1,5 +1,6 @@
 import { METRIC_TIPS, type MetricKey } from "../content/narration";
 import type { JobResult } from "../types";
+import { formatSpeed } from "../lib/format";
 import Help from "./Tooltip";
 
 const ROWS: { key: MetricKey; label: string; value: (r: JobResult) => string }[] = [
@@ -12,12 +13,12 @@ const ROWS: { key: MetricKey; label: string; value: (r: JobResult) => string }[]
   {
     key: "compress",
     label: "Compress speed",
-    value: (r) => `${(r.original_bytes / 1e6 / r.compress_s).toFixed(1)} MB/s`,
+    value: (r) => `${formatSpeed(r.original_bytes / 1e6 / r.compress_s)} MB/s`,
   },
   {
     key: "decompress",
     label: "Decompress speed",
-    value: (r) => `${(r.original_bytes / 1e6 / r.decompress_s).toFixed(1)} MB/s`,
+    value: (r) => `${formatSpeed(r.original_bytes / 1e6 / r.decompress_s)} MB/s`,
   },
 ];
 

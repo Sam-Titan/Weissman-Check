@@ -116,7 +116,7 @@ export default function ReplayCard({ text, fileBytes, runId, tall }: Props) {
               </div>
               <p className="min-h-5 text-sm text-muted" data-testid="latest">
                 {latest
-                  ? `repeat of ${latest.length} chars from ${latest.distance} back (saves ${latest.length - REF_COST} bytes)`
+                  ? `repeat of ${latest.length} chars from ${latest.distance} back (saves ${latest.length - REF_COST} ${latest.length - REF_COST === 1 ? "byte" : "bytes"})`
                   : "Scanning for repeated text…"}
               </p>
             </div>

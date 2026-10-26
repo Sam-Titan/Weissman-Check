@@ -32,17 +32,38 @@ export interface ModeRecommendation {
   near_tie: boolean;
   runner_up: RowSummary | null;
   tie_reason: "browser" | "smaller" | null;
+  too_small_to_matter: boolean;
 }
 
 export interface RowTimes {
   compress_s: number;
   transfer_s: number;
   decompress_s: number;
+  saved_percent: number;
+  decompress_mbps: number;
   static_s: number;
   dynamic_s: number;
 }
 
+export interface Range {
+  min: number;
+  max: number;
+}
+
+export interface GaugeScales {
+  time_static: Range;
+  time_dynamic: Range;
+  decompress_mbps: Range;
+  gzip_default: {
+    saved_percent: number;
+    decompress_mbps: number;
+    static_s: number;
+    dynamic_s: number;
+  } | null;
+}
+
 export interface Analysis {
+  gauges: GaugeScales;
   network_mbps: number;
   original_bytes: number;
   rows: Record<string, RowTimes>;

@@ -10,13 +10,16 @@ export default function DeliveryChart({ analysis, mode }: { analysis: Analysis; 
   const total = (k: string) =>
     mode === "static" ? analysis.rows[k].static_s : analysis.rows[k].dynamic_s;
   const keys = Object.keys(analysis.rows).sort((a, b) => total(a) - total(b));
-  const winnerKey = rec.winner && `${rec.winner.compressor}/${rec.winner.setting}`;
-  const tiedKey = rec.near_tie && rec.runner_up && `${rec.runner_up.compressor}/${rec.runner_up.setting}`;
+  const winnerKey = !rec.too_small_to_matter && rec.winner && `${rec.winner.compressor}/${rec.winner.setting}`;
+  const tiedKey = !rec.too_small_to_matter && rec.near_tie && rec.runner_up && `${rec.runner_up.compressor}/${rec.runner_up.setting}`;
   const axis = (keys.length ? total(keys[0]) : 1) * STOPS;
   const pct = (s: number) => (s / axis) * 100;
 
   return (
-    <div className="rounded-xl border border-line bg-card p-4" aria-label="Delivery time chart">
+    <div
+      className="max-h-[calc(100vh-17rem)] overflow-auto rounded-xl border border-line bg-card p-4 max-[899px]:max-h-none"
+      aria-label="Delivery time chart"
+    >
       <div className="mb-3 flex flex-wrap items-center gap-x-5 gap-y-1 text-xs font-bold text-muted">
         <span>Time to reach a user at {analysis.network_mbps} Mbit/s</span>
         <Legend shade={1} label={mode === "static" ? "compress (free in static)" : "compress"} dim={mode === "static"} />

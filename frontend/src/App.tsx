@@ -16,7 +16,8 @@ import RecommendationBanner from "./components/RecommendationBanner";
 import DeliveryChart from "./components/DeliveryChart";
 import ResultsTable from "./components/ResultsTable";
 import { TooltipProvider } from "./components/Tooltip";
-import WeissmanControl, { BASELINE_LABELS, UNIT_LABELS } from "./components/WeissmanControl";
+import Scorecard from "./components/Scorecard";
+import { BASELINE_LABELS, UNIT_LABELS } from "./components/WeissmanControl";
 import type { Analysis, Baseline, JobResult, Mode, ScoreCell, Unit } from "./types";
 
 type Status = "idle" | "running" | "done" | "error";
@@ -59,7 +60,8 @@ export default function App() {
   const [unit, setUnit] = useState<Unit>("ms");
   const [baseline, setBaseline] = useState<Baseline>("gzip6");
   const [changeNote, setChangeNote] = useState<string | null>(null);
-  const [view, setView] = useState<"table" | "chart">("table");
+  const [view, setView] = useState<"scorecard" | "table" | "chart">("scorecard");
+  const [selected, setSelected] = useState<string | null>(null);
   const [serverRun, setServerRun] = useState<string | null>(null);
   const [downloadMessage, setDownloadMessage] = useState("");
   const closeRef = useRef<() => void>(() => {});
@@ -97,6 +99,7 @@ export default function App() {
     setAnalysis(null);
     setMessage("");
     setChangeNote(null);
+    setSelected(null);
     setDownloadMessage("");
     setStatus("running");
     setRunId(1);
@@ -130,6 +133,7 @@ export default function App() {
     setMessage("");
     setFileMessage("");
     setChangeNote(null);
+    setSelected(null);
     setDownloadMessage("");
     setServerRun(null);
     setRunId(0);
@@ -141,6 +145,10 @@ export default function App() {
   const busy = status === "running";
   const picking = status === "idle" || status === "error";
 
+  const winner = analysis?.recommendation[mode].winner;
+  const pickKey = winner ? `${winner.compressor}/${winner.setting}` : "";
+  // The chip or row the user chose, otherwise the pick (the fastest when the file is too small to matter).
+  const selectedKey = selected && analysis?.rows[selected] ? selected : pickKey;
   const cells = analysis?.weissman[unit][baseline] ?? {};
   // Rank by score among rows that have a number (a comparison of precomputed values, no maths).
   const ranked = Object.entries(cells)
@@ -166,7 +174,7 @@ export default function App() {
 
   return (
     <TooltipProvider>
-      <main className="mx-auto max-w-[1400px] space-y-3 p-4">
+      <main className="mx-auto max-w-[1400px] space-y-3 p-4 max-[899px]:overflow-x-hidden">
         <header className="flex flex-wrap items-center gap-x-4 gap-y-2">
           <h1 className="text-2xl font-black">Weissman Check</h1>
           {status === "done" && rows.length > 0 && (
@@ -183,9 +191,8 @@ export default function App() {
             </>
           )}
         </header>
-        <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_420px]">
+        <div className="grid items-start gap-4 min-[900px]:grid-cols-[minmax(0,1fr)_420px]">
           <div className="min-w-0 space-y-3">
-            <NarratorBox />
             {message && <p className="text-red-600">{message}</p>}
             {picking && (
               <>
@@ -235,8 +242,9 @@ export default function App() {
                 <div role="tablist" className="flex gap-1">
                   {(
                     [
-                      ["table", "Results table"],
-                      ["chart", "Delivery time chart"],
+                      ["scorecard", "Scorecard"],
+                      ["table", "Table"],
+                      ["chart", "Delivery chart"],
                     ] as const
                   ).map(([id, label]) => (
                     <button
@@ -253,8 +261,23 @@ export default function App() {
                   ))}
                 </div>
                 {downloadMessage && <p className="text-sm font-bold text-red-600">{downloadMessage}</p>}
-                {view === "table" ? (
+                {view === "scorecard" ? (
+                  <Scorecard
+                    analysis={analysis}
+                    mode={mode}
+                    selected={selectedKey}
+                    onSelect={setSelected}
+                    entropyBits={file?.entropy.bitsPerByte ?? null}
+                    unit={unit}
+                    baseline={baseline}
+                    onUnit={pickUnit}
+                    onBaseline={pickBaseline}
+                    changeNote={changeNote}
+                  />
+                ) : view === "table" ? (
                   <ResultsTable
+                    selected={selectedKey}
+                    onSelect={setSelected}
                     rows={rows}
                     mode={mode}
                     analysis={analysis}
@@ -276,23 +299,14 @@ export default function App() {
             )}
           </div>
           <div className="min-w-0 space-y-3">
+            <NarratorBox />
             <ReplayCard
               text={file?.text ?? null}
               fileBytes={file?.file.size ?? 0}
               runId={runId}
               tall={status === "done"}
             />
-            {status === "done" && analysis ? (
-              <WeissmanControl
-                unit={unit}
-                baseline={baseline}
-                onUnit={pickUnit}
-                onBaseline={pickBaseline}
-                note={changeNote}
-              />
-            ) : (
-              <MetricsBox latest={busy ? latest : null} />
-            )}
+            {status !== "done" && <MetricsBox latest={busy ? latest : null} />}
           </div>
         </div>
       </main>

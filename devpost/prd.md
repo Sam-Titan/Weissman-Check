@@ -42,9 +42,10 @@ Two surfaces: the hero page and the compressor page. There is no nav bar and the
 - **Left half:** switches automatically from the dropbox to the results. A **Try another file** button brings the dropbox back.
 - **Right half:** the replay card becomes a tall rectangle and keeps its replay, with Stop/Restart. The metrics box is replaced by the results table on the left.
 - **Results content, top to bottom:**
-  1. The recommendation banner (one line, with the static/dynamic toggle on it).
+  1. The recommendation banner (a fixed-height block, with the static/dynamic toggle on it). When every option reaches a user within 1 ms of the best, it says "Too small to matter" and shows no pick.
   2. The results table.
-  3. The Weissman "break it" control, in the right column under the replay card (default time unit: milliseconds).
+  3. The Weissman "break it" control, inside the Weissman gauge on the scorecard (default time unit: milliseconds).
+- The results below the banner are three tabs: a **scorecard** (default), the table, and the delivery time chart. The scorecard has a row of compressor chips and one semicircle gauge each for time to user, saved, decompress speed, the file's entropy and the Weissman score, with coloured zones and a tick for where gzip level 6 lands. Selecting a chip or a table row changes every gauge.
 - A **delivery time chart** (stacked compress / transfer / decompress bars per run) sits in a tab next to the results table and follows the static/dynamic toggle.
 
 ## Look and Feel
@@ -151,7 +152,7 @@ Six compressors: gzip, brotli, zstd, lz4, xz, bzip2. Each is run at a fast and a
 - Compressor carousel with six cards, include checkboxes, and a narration card per compressor.
 - Real benchmark of gzip, brotli, zstd, lz4, xz and bzip2, each at fast and strong, with the 12-segment progress bar.
 - Replay card with repeat highlights, labels, a bytes-saved counter, and Stop/Restart.
-- Results: recommendation banner with static/dynamic toggle, a delivery time chart showing where the time goes, results table with per-row download, "?" tooltips on metrics, and the Weissman "break it" control.
+- Results: recommendation banner with static/dynamic toggle, a scorecard of gauges, a delivery time chart showing where the time goes, results table with per-row download, "?" tooltips on metrics, and the Weissman "break it" control.
 - The empty and error states above, and Try another file.
 - The flat, bright, 2013–2015 look.
 

@@ -43,8 +43,8 @@ function Group<T extends string>({
   );
 }
 
-/** Pick the time unit and baseline; the page just shows the matching precomputed table. */
-export default function WeissmanControl({
+/** The break-it controls: pick the time unit and baseline; the gauge shows the matching precomputed score. */
+export default function WeissmanPicker({
   unit,
   baseline,
   onUnit,
@@ -58,17 +58,15 @@ export default function WeissmanControl({
   note: string | null; // describes the last change; nothing is shown until the user changes a control
 }) {
   return (
-    <section className="space-y-3 rounded-xl border border-line bg-card p-4" aria-label="Weissman control">
-      <h2 className="text-base font-black">Break the Weissman score</h2>
-      <div className="flex flex-wrap gap-x-5 gap-y-2">
-        <Group label="Time unit" value={unit} options={UNIT_LABELS} onChange={onUnit} />
-        <Group label="Baseline" value={baseline} options={BASELINE_LABELS} onChange={onBaseline} />
-      </div>
+    <div className="space-y-2" aria-label="Weissman control">
+      <h3 className="text-sm font-black">Break the Weissman score</h3>
+      <Group label="Time unit" value={unit} options={UNIT_LABELS} onChange={onUnit} />
+      <Group label="Baseline" value={baseline} options={BASELINE_LABELS} onChange={onBaseline} />
       {note && (
-        <p className="text-sm" data-testid="weissman-note">
+        <p className="text-xs" data-testid="weissman-note">
           {note}
         </p>
       )}
-    </section>
+    </div>
   );
 }

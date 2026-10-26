@@ -1,5 +1,5 @@
 import { BROWSER_SUPPORTED, COLORS, type CompressorName } from "../lib/compressors";
-import { formatTime } from "../lib/format";
+import { formatSpeed, formatTime } from "../lib/format";
 import { METRIC_TIPS } from "../content/narration";
 import type { Analysis, JobResult, Mode, ScoreCell } from "../types";
 import Help, { Tip } from "./Tooltip";
@@ -7,7 +7,7 @@ import Help, { Tip } from "./Tooltip";
 const ZSTD_NOTE = "Supported in Chromium and Firefox; Safari support has lagged.";
 
 // Fixed widths keep the numeric columns from running together.
-const COLS = [140, 56, 50, 56, 72, 88, 70, 84, 70, 44];
+const COLS = [178, 56, 50, 56, 72, 88, 70, 84, 70, 44];
 
 export default function ResultsTable({
   rows,
@@ -16,6 +16,8 @@ export default function ResultsTable({
   cells,
   ranked,
   onDownload,
+  selected,
+  onSelect,
 }: {
   rows: JobResult[];
   mode: Mode;
@@ -23,6 +25,8 @@ export default function ResultsTable({
   cells: Record<string, ScoreCell>;
   ranked: string[];
   onDownload: (r: JobResult) => void;
+  selected: string;
+  onSelect: (key: string) => void;
 }) {
   const rec = analysis.recommendation[mode];
   // Fastest to the user first for the current mode (the pick leads when two are tied); failed runs last.
@@ -30,7 +34,9 @@ export default function ResultsTable({
     const t = analysis.rows[`${r.compressor}/${r.setting}`];
     return t ? (mode === "static" ? t.static_s : t.dynamic_s) : Infinity;
   };
-  const isPick = (r: JobResult) => rec.winner?.compressor === r.compressor && rec.winner.setting === r.setting;
+  const isPick = (r: JobResult) =>
+    !rec.too_small_to_matter &&
+    rec.winner?.compressor === r.compressor && rec.winner.setting === r.setting;
   const ordered = [...rows].sort((a, b) =>
     isPick(a) ? -1 : isPick(b) ? 1 : total(a) - total(b),
   );
@@ -42,13 +48,14 @@ export default function ResultsTable({
   );
   return (
     <div className="rounded-xl border border-line bg-card">
-      <table className="w-full table-fixed text-sm tabular-nums">
+      <div className="max-h-[calc(100vh-17rem)] overflow-auto max-[899px]:max-h-none">
+      <table className="w-full min-w-[820px] table-fixed text-sm tabular-nums">
         <colgroup>
           {COLS.map((w, i) => (
             <col key={i} style={{ width: w }} />
           ))}
         </colgroup>
-        <thead className="text-xs text-muted">
+        <thead className="sticky top-0 z-[1] bg-card text-xs text-muted shadow-[0_1px_0_var(--color-line)]">
           <tr>
             {head("Compressor", undefined, true)}
             {head("Size KB", "size")}
@@ -66,15 +73,18 @@ export default function ResultsTable({
           {ordered.map((r) => {
             const key = `${r.compressor}/${r.setting}`;
             const color = COLORS[r.compressor as CompressorName];
-            const isWinner = rec.winner && `${rec.winner.compressor}/${rec.winner.setting}` === key;
+            const isWinner =
+              !rec.too_small_to_matter && rec.winner && `${rec.winner.compressor}/${rec.winner.setting}` === key;
             const isTied =
-              rec.near_tie && rec.runner_up && `${rec.runner_up.compressor}/${rec.runner_up.setting}` === key;
+              !rec.too_small_to_matter && rec.near_tie && rec.runner_up && `${rec.runner_up.compressor}/${rec.runner_up.setting}` === key;
             const times = analysis.rows[key];
             const time = times ? (mode === "static" ? times.static_s : times.dynamic_s) : null;
             return (
               <tr
                 key={key}
-                className="h-7 border-t border-line"
+                onClick={() => onSelect(key)}
+                aria-selected={selected === key}
+                className={`h-7 cursor-pointer border-t border-line ${selected === key ? "outline outline-2 -outline-offset-2 outline-ink" : ""}`}
                 style={
                   isWinner || isTied
                     ? { background: `color-mix(in srgb, ${color} ${isWinner ? 16 : 9}%, white)` }
@@ -82,7 +92,7 @@ export default function ResultsTable({
                 }
               >
                 <td
-                  className="truncate whitespace-nowrap pl-3"
+                  className="whitespace-nowrap pl-3"
                   style={{ borderLeft: `6px solid ${color}` }}
                 >
                   {isWinner && (
@@ -114,8 +124,8 @@ export default function ResultsTable({
                     <td className="text-right">
                       {((r.compressed_bytes * 8) / r.original_bytes).toFixed(2)}
                     </td>
-                    <td className="text-right">{(r.original_bytes / 1e6 / r.compress_s).toFixed(1)}</td>
-                    <td className="text-right">{(r.original_bytes / 1e6 / r.decompress_s).toFixed(1)}</td>
+                    <td className="text-right">{formatSpeed(r.original_bytes / 1e6 / r.compress_s)}</td>
+                    <td className="text-right">{formatSpeed(r.original_bytes / 1e6 / r.decompress_s)}</td>
                     <td className="text-right font-semibold">{time === null ? "…" : formatTime(time)}</td>
                     <td className="text-right" data-testid="weissman-cell">
                       <ScoreView score={cells[key]} rank={ranked.indexOf(key) + 1} />
@@ -125,7 +135,10 @@ export default function ResultsTable({
                     </td>
                     <td className="pr-3 text-right">
                       <button
-                        onClick={() => onDownload(r)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDownload(r);
+                        }}
                         aria-label={`Download ${r.compressor} (${r.setting})`}
                         className="rounded px-1 font-sans font-bold text-accent hover:bg-accent/10"
                       >
@@ -139,6 +152,7 @@ export default function ResultsTable({
           })}
         </tbody>
       </table>
+      </div>
       <p className="border-t border-line px-3 py-1.5 text-xs text-muted">
         ★ pick · ≈ effectively tied · ✓* zstd: {ZSTD_NOTE}
       </p>

@@ -105,3 +105,51 @@ def test_chart_parts_add_up_to_the_totals():
     assert (t.compress_s, round(t.transfer_s, 3), t.decompress_s) == (0.012, 0.092, 0.004)
     assert t.static_s == t.transfer_s + t.decompress_s
     assert t.dynamic_s == t.compress_s + t.transfer_s + t.decompress_s
+
+
+def tiny(compressor, setting, size, compress_s, decompress_s):
+    r = job(compressor, setting, size, compress_s, decompress_s)
+    return r.model_copy(update={"original_bytes": 2_000})
+
+
+def test_tiny_file_is_too_small_to_matter():
+    # 2 KB file: every option reaches a user in well under 1 ms of the best, in both modes.
+    rows = [
+        tiny("gzip", "fast", 900, 0.00005, 0.00002),
+        tiny("brotli", "strong", 700, 0.00030, 0.00003),
+        tiny("zstd", "fast", 800, 0.00004, 0.00002),
+    ]
+    rec = analyse(rows).recommendation
+    assert rec.static.too_small_to_matter and rec.dynamic.too_small_to_matter
+    assert rec.static.winner is not None  # still the fastest, for the gauges' default
+
+
+def test_normal_file_is_not_too_small():
+    rec = analyse([ZSTD_FAST, BROTLI_STRONG]).recommendation
+    assert not rec.static.too_small_to_matter and not rec.dynamic.too_small_to_matter
+
+
+def test_too_small_is_judged_per_mode():
+    # Static times are equal (same size, same decompress) but dynamic differs by 50 ms.
+    slow = tiny("gzip", "strong", 800, 0.050, 0.00002)
+    fast = tiny("zstd", "fast", 800, 0.00004, 0.00002)
+    rec = analyse([slow, fast]).recommendation
+    assert rec.static.too_small_to_matter and not rec.dynamic.too_small_to_matter
+
+
+def test_one_compressor_alone_is_never_too_small_to_matter():
+    rec = analyse([tiny("gzip", "fast", 900, 0.0001, 0.00002)]).recommendation
+    assert not rec.static.too_small_to_matter
+
+
+def test_gauge_data_is_precomputed():
+    gzip6 = job("gzip", "baseline", 210_000, 0.030, 0.005, baseline=True)
+    result = analyse([gzip6, ZSTD_FAST, BROTLI_STRONG])
+    row = result.rows["zstd/fast"]
+    assert row.saved_percent == 77.0
+    assert round(row.decompress_mbps) == 250
+    g = result.gauges
+    assert round(g.time_static.min, 3) == 0.066 and round(g.time_static.max, 3) == 0.096
+    assert round(g.time_dynamic.max, 3) == 1.166
+    assert g.gzip_default is not None and g.gzip_default.saved_percent == 79.0
+    assert analyse([ZSTD_FAST]).gauges.gzip_default is None

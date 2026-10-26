@@ -6,7 +6,13 @@ const UNIVERSAL = new Set(["gzip", "brotli"]);
 const name = (r: RowSummary) => `${r.compressor} (${r.setting})`;
 const MODE_NOTE: Record<Mode, string> = { static: "static assets", dynamic: "dynamic responses" };
 
-/** Fixed height, four fixed lines: the banner never changes size between modes or samples. */
+function browserLine(r: RowSummary): string {
+  if (UNIVERSAL.has(r.compressor)) return `${r.compressor} works in every browser.`;
+  if (r.compressor === "zstd") return "zstd works in Chromium and Firefox; Safari support has lagged.";
+  return `${r.compressor} is not a browser Content-Encoding: fine for caches and backups, not for browsers.`;
+}
+
+/** Fixed height, four lines that are always filled: the banner never changes size or has a gap. */
 export default function RecommendationBanner({
   analysis,
   mode,
@@ -16,34 +22,43 @@ export default function RecommendationBanner({
   mode: Mode;
   onMode: (m: Mode) => void;
 }) {
-  const { winner, browser_best, near_tie, runner_up, tie_reason } = analysis.recommendation[mode];
+  const { winner, browser_best, near_tie, runner_up, tie_reason, too_small_to_matter } =
+    analysis.recommendation[mode];
+  let head = "Every compressor failed";
   let note = "";
-  if (winner && near_tie && runner_up) {
-    note = `Effectively tied with ${name(runner_up)}: ${
-      tie_reason === "browser"
-        ? `${winner.compressor} works in browsers and ${runner_up.compressor} doesn't.`
-        : UNIVERSAL.has(winner.compressor)
-          ? `${winner.compressor} is smaller and works in every browser.`
-          : `${winner.compressor} is smaller.`
-    }`;
-  } else if (winner && browser_best && browser_best.compressor !== winner.compressor) {
-    note = `Fastest overall. Best for browsers: ${name(browser_best)}.`;
+  let line = "";
+  if (winner && too_small_to_matter) {
+    head = "Too small to matter";
+    note = `Every option reaches a user in ~${formatTime(winner.delivery_s)}.`;
+    line = "Any browser-supported compressor is fine; gzip is the safe default.";
+  } else if (winner) {
+    head = `Ship ${name(winner)}`;
+    if (near_tie && runner_up) {
+      note = `Effectively tied with ${name(runner_up)}: ${
+        tie_reason === "browser"
+          ? `${winner.compressor} works in browsers and ${runner_up.compressor} doesn't.`
+          : UNIVERSAL.has(winner.compressor)
+            ? `${winner.compressor} is smaller and works in every browser.`
+            : `${winner.compressor} is smaller.`
+      }`;
+    } else if (browser_best && browser_best.compressor !== winner.compressor) {
+      note = `Fastest overall. Best for browsers: ${name(browser_best)}.`;
+    } else {
+      note = browserLine(winner);
+    }
+    line = `For ${MODE_NOTE[mode]}: reaches a user in ${formatTime(winner.delivery_s)}, ${winner.percent_saved.toFixed(0)}% smaller`;
   }
   return (
-    <section className="flex h-36 items-start justify-between gap-4 overflow-hidden rounded-xl bg-deep p-5 text-white">
-      <div className="min-w-0 space-y-1">
-        <p className="truncate text-3xl font-black leading-tight tracking-tight">
-          {winner ? `Ship ${name(winner)}` : "Every compressor failed"}
-        </p>
-        <p className="h-5 truncate text-sm font-bold text-white/90" title={note}>
+    <section className="flex h-32 items-center justify-between gap-4 overflow-hidden rounded-xl bg-deep px-5 text-white">
+      <div className="min-w-0 space-y-0.5">
+        <p className="truncate text-3xl font-black leading-tight tracking-tight">{head}</p>
+        <p className="truncate text-sm font-bold text-white/90" title={note}>
           {note}
         </p>
-        <p className="h-6 truncate text-lg font-bold">
-          {winner
-            ? `For ${MODE_NOTE[mode]}: reaches a user in ${formatTime(winner.delivery_s)}, ${winner.percent_saved.toFixed(0)}% smaller`
-            : ""}
+        <p className="truncate text-lg font-bold" title={line}>
+          {line}
         </p>
-        <p className="h-4 text-xs font-bold text-white/70">
+        <p className="text-xs font-bold text-white/70">
           Fastest means shortest time to reach a user at {analysis.network_mbps} Mbit/s.
         </p>
       </div>
@@ -51,7 +66,7 @@ export default function RecommendationBanner({
         type="single"
         value={mode}
         onValueChange={(v) => v && onMode(v as Mode)}
-        className="flex shrink-0 overflow-hidden rounded-lg border border-white/60"
+        className="flex shrink-0 self-start overflow-hidden rounded-lg border border-white/60 mt-4"
       >
         {(["static", "dynamic"] as const).map((m) => (
           <ToggleGroup.Item

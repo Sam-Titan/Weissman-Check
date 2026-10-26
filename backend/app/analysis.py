@@ -5,8 +5,11 @@ from collections.abc import Callable, Iterable
 
 from .models import (
     Analysis,
+    GaugeScales,
+    GzipDefault,
     JobResult,
     ModeRecommendation,
+    Range,
     Recommendation,
     RowSummary,
     RowTimes,
@@ -22,6 +25,7 @@ BASELINES = {
     "gzip1": ("gzip", "fast"),
     "zstd3": ("zstd", "baseline"),
 }
+TOO_SMALL_S = 0.001  # every option within 1 ms of the best: the choice does not matter
 TIE_FRACTION = 0.05  # a runner-up within 5% of the winner's time counts as a near tie
 
 
@@ -60,6 +64,7 @@ def _recommend(rows: list[JobResult], time_fn: Callable[[JobResult], float]) -> 
     if not rows:
         return ModeRecommendation(winner=None, browser_best=None)
     fastest = min(time_fn(r) for r in rows)
+    too_small = len(rows) > 1 and max(time_fn(r) for r in rows) - fastest <= TOO_SMALL_S
     tied = sorted(
         (r for r in rows if time_fn(r) <= fastest * (1 + TIE_FRACTION)),
         key=lambda r: (_tie_key(r), time_fn(r)),
@@ -81,6 +86,7 @@ def _recommend(rows: list[JobResult], time_fn: Callable[[JobResult], float]) -> 
         near_tie=runner_up is not None,
         runner_up=_summary(runner_up, time_fn) if runner_up else None,
         tie_reason=reason,
+        too_small_to_matter=too_small,
     )
 
 
@@ -143,6 +149,31 @@ def _weissman_tables(
     return tables
 
 
+def _mbps(r: JobResult) -> float:
+    return r.original_bytes / 1e6 / r.decompress_s if r.decompress_s > 0 else 0.0
+
+
+def _range(values: list[float]) -> Range:
+    return Range(min=min(values), max=max(values)) if values else Range(min=0.0, max=0.0)
+
+
+def _gauges(rows: list[JobResult], everything: dict[tuple[str, str], JobResult]) -> GaugeScales:
+    gzip6 = everything.get(BASELINES["gzip6"])
+    return GaugeScales(
+        time_static=_range([static_time(r) for r in rows]),
+        time_dynamic=_range([dynamic_time(r) for r in rows]),
+        decompress_mbps=_range([_mbps(r) for r in rows]),
+        gzip_default=GzipDefault(
+            saved_percent=(1 - gzip6.compressed_bytes / gzip6.original_bytes) * 100,
+            decompress_mbps=_mbps(gzip6),
+            static_s=static_time(gzip6),
+            dynamic_s=dynamic_time(gzip6),
+        )
+        if gzip6
+        else None,
+    )
+
+
 def analyse(results: Iterable[JobResult]) -> Analysis:
     results = list(results)
     rows = [r for r in results if r.status == "ok" and not r.is_baseline]
@@ -153,6 +184,8 @@ def analyse(results: Iterable[JobResult]) -> Analysis:
         rows={
             f"{r.compressor}/{r.setting}": RowTimes(
                 compress_s=r.compress_s,
+                saved_percent=(1 - r.compressed_bytes / r.original_bytes) * 100,
+                decompress_mbps=_mbps(r),
                 transfer_s=transfer_s(r.compressed_bytes),
                 decompress_s=r.decompress_s,
                 static_s=static_time(r),
@@ -160,6 +193,7 @@ def analyse(results: Iterable[JobResult]) -> Analysis:
             )
             for r in rows
         },
+        gauges=_gauges(rows, everything),
         weissman=_weissman_tables(rows, everything),
         recommendation=Recommendation(
             static=_recommend(rows, static_time),

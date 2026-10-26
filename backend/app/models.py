@@ -47,6 +47,8 @@ class ModeRecommendation(BaseModel):
     near_tie: bool = False
     runner_up: RowSummary | None = None
     tie_reason: Literal["browser", "smaller"] | None = None
+    # every option is within 1 ms of the best: the choice does not matter for this file
+    too_small_to_matter: bool = False
 
 
 class RowTimes(BaseModel):
@@ -55,6 +57,8 @@ class RowTimes(BaseModel):
     compress_s: float
     transfer_s: float
     decompress_s: float
+    saved_percent: float
+    decompress_mbps: float
     static_s: float  # transfer + decompress
     dynamic_s: float  # compress + transfer + decompress
 
@@ -70,10 +74,34 @@ class ScoreCell(BaseModel):
     note: str  # one line; empty when status is "ok"
 
 
+class Range(BaseModel):
+    min: float
+    max: float
+
+
+class GzipDefault(BaseModel):
+    """Where gzip level 6 (the common default) lands, for the gauges' reference tick."""
+
+    saved_percent: float
+    decompress_mbps: float
+    static_s: float
+    dynamic_s: float
+
+
+class GaugeScales(BaseModel):
+    """Scale ends for the scorecard gauges: the fastest and slowest in this run."""
+
+    time_static: Range
+    time_dynamic: Range
+    decompress_mbps: Range
+    gzip_default: GzipDefault | None
+
+
 class Analysis(BaseModel):
     network_mbps: float
     original_bytes: int
     rows: dict[str, RowTimes]  # "compressor/setting" -> time to the user, both modes
     # weissman[unit][baseline]["compressor/setting"]: all 9 unit x baseline tables, precomputed
     weissman: dict[str, dict[str, dict[str, ScoreCell]]]
+    gauges: GaugeScales
     recommendation: Recommendation

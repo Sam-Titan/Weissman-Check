@@ -116,6 +116,8 @@ winner(mode)  = argmin of that mode's time over successful rows
 browser_best(mode) = same, restricted to {gzip, brotli, zstd}
 ```
 - **Time parts (for the delivery chart and the table's "To user" column):** `analysis.rows["compressor/setting"]` carries `compress_s`, `transfer_s`, `decompress_s`, and the two totals `static_s = transfer + decompress` and `dynamic_s = compress + transfer + decompress`. The browser only draws them.
+- **Gauge data (for the scorecard):** each `analysis.rows` entry also carries `saved_percent` and `decompress_mbps`; `analysis.gauges` carries the fastest/slowest range for time (static and dynamic) and decompress speed, and `gzip_default` (where gzip level 6 lands: saved %, decompress speed, static and dynamic time) so every gauge can mark it. Entropy is the one gauge value not from the server: the browser already computes it for the file chip.
+- **Too small to matter:** per mode, if there are at least two rows and every row's time-to-user is within 1 ms of the best, the mode's recommendation sets `too_small_to_matter` (the winner is still the fastest, for gauge defaults, but the banner and table show no pick). Added after hands-on feedback round 3.
 - **Near ties:** if the runner-up's time is within 5% of the fastest, the winner is picked by tie-break (browser-supported first, then smaller output) and the mode's recommendation carries `near_tie`, `runner_up` and `tie_reason`. Added after early feedback (see `checklist.md > Revisions`).
 - **Recommendation payload:** for `static` and `dynamic`: `winner`, `browser_best`, each with compressor, setting, size, % saved, decompress MB/s, and delivery time; plus `network_mbps` so the banner can state the assumed speed. If the winner is already a browser-supported compressor, `browser_best` equals it and the banner shows one line; otherwise the banner shows both (`prd.md > Results: recommendation banner`). If no row succeeded, `winner` is null.
 - **Weissman payload:** `weissman[unit][baseline]` for unit ∈ {`s`, `ms`, `us`} × baseline ∈ {`gzip6`, `gzip1`, `zstd3`} (9 tables). Each table maps `compressor/setting` to a score object `{status, value, note}`:
@@ -178,21 +180,37 @@ PRD ref: `prd.md > Replay card`.
 
 ### Frontend: Recommendation Banner
 `RecommendationBanner.tsx` — shows `analysis.recommendation[mode]`; no maths, only formatting. The static/dynamic toggle (Radix toggle-group) switches `mode` in the reducer.
-- Banner format: a **fixed-height** block of four fixed lines so it never resizes between modes or samples: (1) "Ship **brotli (strong)**"; (2) one small note line (the near-tie explanation, or "Fastest overall. Best for browsers: brotli (strong)." when `browser_best` differs from `winner`, otherwise empty); (3) "For static assets: reaches a user in 65 ms, 90% smaller"; (4) the footnote "Fastest means shortest time to reach a user at 20 Mbit/s." (the speed comes from `analysis.network_mbps`). The banner ranks by time to the user, so the headline leads with that time, not decompress speed.
+- Banner format: a **fixed-height** (128 px) block whose four lines are always filled, so it never resizes or shows a gap: (1) "Ship **brotli (strong)**"; (2) a small note: the near-tie explanation, else "Fastest overall. Best for browsers: …" when `browser_best` differs from `winner`, else one line on browser support for the pick; (3) "For static assets: reaches a user in 65 ms, 90% smaller"; (4) the footnote "Fastest means shortest time to reach a user at 20 Mbit/s." (the speed comes from `analysis.network_mbps`). When `too_small_to_matter` is set: headline "Too small to matter", note "Every option reaches a user in ~X ms.", line 3 "Any browser-supported compressor is fine; gzip is the safe default.", and no ★ pick anywhere. Times under 1 ms are shown in µs, under 10 ms with two decimals.
 - If `winner` is null (every run failed), the banner says the run failed.
 PRD ref: `prd.md > Results: recommendation banner`.
 
 ### Frontend: Results Table
-`ResultsTable.tsx` — compact, single-line rows with fixed-width, right-aligned, tabular-number columns: compressor, size (KB), saved, compress MB/s, decompress MB/s, **To user** (time to the user for the current mode, from `analysis.rows`), Weissman, browser. Rows are coloured by compressor; the pick gets ★ and a tinted row, a near-tie runner-up gets ≈ and a lighter tint; a legend line sits under the table (including the zstd caveat). The browser column shows ✓ for gzip/brotli, ✓* for zstd (tooltip: "Supported in Chromium and Firefox; Safari support has lagged."), and — for lz4/xz/bzip2 (tooltip: "Not a browser Content-Encoding."). "?" tooltips on metric headings. Failed rows show "failed". The Weissman cell renders the score object: `ok` shows the number, `flagged` the number with ⚠, `undefined` a small neutral "undefined" pill; each reason sits in a tooltip on that cell. A "#n" rank beside each number is a sort of the precomputed values, not maths. The bits-per-byte column and default delivery-time ordering are still to do (slice 7).
+`ResultsTable.tsx` — compact, single-line rows with fixed-width, right-aligned, tabular-number columns: compressor, size (KB), saved, compress MB/s, decompress MB/s, **To user** (time to the user for the current mode, from `analysis.rows`), Weissman, browser. Rows are coloured by compressor, clicking a row selects that compressor for the scorecard, and the header is sticky while the table scrolls inside its card (below 900 px wide it also scrolls sideways inside the card); the pick gets ★ and a tinted row, a near-tie runner-up gets ≈ and a lighter tint; a legend line sits under the table (including the zstd caveat). The browser column shows ✓ for gzip/brotli, ✓* for zstd (tooltip: "Supported in Chromium and Firefox; Safari support has lagged."), and — for lz4/xz/bzip2 (tooltip: "Not a browser Content-Encoding."). "?" tooltips on metric headings. Failed rows show "failed". The Weissman cell renders the score object: `ok` shows the number, `flagged` the number with ⚠, `undefined` a small neutral "undefined" pill; each reason sits in a tooltip on that cell. A "#n" rank beside each number is a sort of the precomputed values, not maths. Speeds that round to zero show as "<0.1".
 PRD ref: `prd.md > Results: table`.
 
 ### Frontend: Delivery Chart
 `DeliveryChart.tsx` — the unique kernel made visible: one stacked horizontal bar per run (compress / transfer / decompress at the assumed network speed), in the compressor's colour with three shades, sorted by total time for the current mode. It follows the Static/Dynamic toggle: in static mode the compress segment is zero-width and the legend greys it ("compress (free in static)"). The winner has a ring (a near-tie runner-up a lighter one). The axis ends at 3× the winner's time and longer bars are clipped with a ▶ marker, so one slow compressor cannot flatten the rest. Plain divs, no chart library; all values come from `analysis.rows`. It sits in a tab next to the results table so the results view fits a 1440×900 screen without scrolling.
 PRD ref: `prd.md > Results: delivery time chart`.
 
+### Frontend: Scorecard and Gauges
+`Scorecard.tsx`, `Gauge.tsx`, `lib/gauges.ts` — the default results tab. A row of 12 compressor chips (compressor colour + fast/strong) selects the run being shown; the default is the pick (the fastest when the file is too small to matter) and clicking a table row selects too. One hand-built SVG semicircle gauge per metric (no chart library, a generic look): metric name above, big value below, one plain-English line under that, coloured labelled zones, a needle that animates with Motion, and a black tick where gzip level 6 lands ("gzip default"). Right is always the good end, except entropy.
+
+| Gauge | Value comes from | Scale and zones |
+|---|---|---|
+| Time to user | `analysis.rows[...]`, follows the Static/Dynamic toggle | log scale between the run's fastest and slowest; slow / ok / fast thirds |
+| Saved | `rows[...].saved_percent` | 0–100; little < 50, good 50–80, great > 80 |
+| Decompress speed | `rows[...].decompress_mbps` | log scale between the run's slowest and fastest; slow / ok / fast thirds |
+| Entropy of your file | computed in the browser (file chip) | 0–8 bits/byte; worth it < 6.0, some gain 6.0–7.5, dense > 7.5 (the spec thresholds) |
+| Weissman score | `analysis.weissman[unit][baseline][...]` | log scale 0.25–4; worse < 0.95, ≈ 0.95–1.05, better > 1.05 |
+
+The Weissman gauge card also holds the break-it controls (see below); the separate panel is gone. For a flagged cell the needle is grey and the reason replaces the plain-English line; for an undefined cell the needle is parked and grey.
+PRD ref: `prd.md > Results: scorecard`.
+
 ### Frontend: Weissman "Break It" Control
-`WeissmanControl.tsx` — two selectors (time unit, baseline) that choose `analysis.weissman[unit][baseline]` to display. The panel lives in the right column under the replay card. The default unit is **milliseconds**; seconds is the "break it" demo. No score maths in the frontend. Nothing is shown under the selectors until the user changes one; then a note describes the actual change (who tops the table now and who it replaced, and how many scores are flagged or undefined compared with before), counted from the precomputed tables. Each flagged or undefined reason is a tooltip on its own cell, not a list.
+`WeissmanControl.tsx` (`WeissmanPicker`) — two selectors (time unit, baseline) that choose `analysis.weissman[unit][baseline]`, living inside the Weissman gauge card. The default unit is **milliseconds**; seconds is the "break it" demo. No score maths in the frontend. Nothing is shown under the selectors until the user changes one; then a note describes the actual change (who tops the table now and who it replaced, and how many scores are flagged or undefined compared with before), counted from the precomputed tables. Each flagged or undefined reason is a tooltip on its own table cell, and the gauge shows it for the selected run.
 PRD ref: `prd.md > Results: Weissman "break it" control`.
+
+**Results layout.** Left column: the banner, then tabs **Scorecard** (default) | **Table** | **Delivery chart**. Right column: the narrator box and the replay card. The results view fits 1280×720 without page scrolling (the table and chart scroll inside their cards). Below 900 px wide the columns stack and the table scrolls sideways inside its card; there is no other mobile work.
 
 **Worked example (illustrative numbers, for the learner's question; the app shows real ones).** 1,000,000-byte file, 20 Mbit/s = 2,500,000 B/s:
 
@@ -284,7 +302,9 @@ weissman-check/
 │           ├── RecommendationBanner.tsx
 │           ├── ResultsTable.tsx
 │           ├── DeliveryChart.tsx   # stacked compress/transfer/decompress bars
-│           ├── WeissmanControl.tsx
+│           ├── WeissmanControl.tsx # unit/baseline picker inside the Weissman gauge card
+│           ├── Scorecard.tsx       # chips + gauges
+│           ├── Gauge.tsx           # hand-built SVG semicircle gauge
 │           └── Tooltip.tsx     # Radix tooltip wrapper, our styling
 └── devpost/                    # planning docs (scope, prd, spec, checklist)
 ```
@@ -315,6 +335,7 @@ Minimal, as the learner chose. All logic under test lives in the backend; there 
 - `test_weissman.py` — worked example from this spec (0.72 `flagged` in seconds, 1.25 `ok` in milliseconds, 1.00 in microseconds); all 9 unit × baseline tables are present; the baseline scores 1.0; **every edge-case branch** (T ≤ 0, `ln T = 0`, `ln T̄ = 0`, opposite signs → `undefined`; both negative → `flagged`) returns the right status and a non-empty note; no value is ever NaN or infinite.
 - `test_recommend.py` — the worked-example rows give brotli-strong for static and zstd-fast for dynamic; when the overall winner is xz/lz4/bzip2 the `browser_best` is the best of gzip/brotli/zstd; failed rows are ignored; all-failed returns null winners.
 - `test_timing.py` — the adaptive loop with fake jobs: a job slower than the budget runs once, a fast job runs up to `MAX_REPEATS`, median is returned.
+- `test_recommend.py` also covers `too_small_to_matter` (tiny file, normal file, per mode, one compressor alone) and the gauge data; `test_api.py` covers downloads, failed jobs and upload limits.
 - `test_samples_flip.py` — **sample flip check.** Runs the real benchmark on each sample, builds the `Analysis` at 20 Mbit/s, and asserts that **at least one sample** has different static and dynamic winners. If it fails, the fix is tuning the assumed speed or the sample generator, not weakening the test.
 
 ## Important Failure Modes
@@ -336,6 +357,8 @@ Minimal, as the learner chose. All logic under test lives in the backend; there 
 ## Decisions and Open Issues
 
 ### Decisions
+- **Scorecard (learner's request, scope change):** gauges for time to user, saved, decompress speed, entropy and Weissman, with the break-it controls inside the Weissman gauge. Zones and scales are in Frontend: Scorecard and Gauges. Entropy stays computed in the browser (the file chip already does it) rather than moved to the server.
+- **Too small to matter (learner's request):** within 1 ms of the best in a mode means no pick is shown for that mode.
 - **Stack (learner's choice, based on their toolkit):** FastAPI + uv + Ruff + pytest; React/TS/Vite + pnpm; Tailwind v4 with custom theme (shadcn's default look rejected, Radix primitives only for tooltip/toggle behavior); Motion; Justfile with `just dev`. Excluded by the learner: Docker Compose, TanStack Query, Zustand, React Router, Hey API, CI, Lefthook.
 - **Streaming (recommended, accepted):** SSE for live progress (create the run with `POST`, then listen with `EventSource`). Tradeoff: two calls instead of one, but works with `EventSource` and the Vite proxy.
 - **Downloads (accepted):** compressed bytes kept in server memory for ~10 minutes. Tradeoff: lost on restart and after expiry.
