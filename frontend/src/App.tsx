@@ -1,6 +1,11 @@
 import { useRef, useState } from "react";
 import { createRun, fetchSample, openEvents } from "./api";
-import { COMPRESSORS } from "./lib/compressors";
+import { COMPRESSORS, type CompressorName } from "./lib/compressors";
+import { entropyOf, type Entropy } from "./lib/entropy";
+import { validateFile } from "./lib/validate";
+import CompressorCarousel from "./components/CompressorCarousel";
+import Dropbox from "./components/Dropbox";
+import FileChip from "./components/FileChip";
 import { formatSize } from "./lib/format";
 import MetricsBox from "./components/MetricsBox";
 import ReplayCard, { REPLAY_BYTES } from "./components/ReplayCard";
@@ -11,12 +16,6 @@ import ResultsTable from "./components/ResultsTable";
 import { TooltipProvider } from "./components/Tooltip";
 import WeissmanControl, { BASELINE_LABELS, UNIT_LABELS } from "./components/WeissmanControl";
 import type { Analysis, Baseline, JobResult, Mode, ScoreCell, Unit } from "./types";
-
-const SAMPLES = [
-  { label: "JSON API response", file: "api-response.json" },
-  { label: "Server log", file: "server.log" },
-  { label: "Minified JS", file: "app.min.js" },
-];
 
 type Status = "idle" | "running" | "done" | "error";
 
@@ -50,7 +49,9 @@ export default function App() {
   const [analysis, setAnalysis] = useState<Analysis | null>(null);
   const [mode, setMode] = useState<Mode>("static");
   const [active, setActive] = useState<string | null>(null);
-  const [preview, setPreview] = useState<{ text: string; bytes: number } | null>(null);
+  const [file, setFile] = useState<{ file: File; entropy: Entropy; text: string } | null>(null);
+  const [fileMessage, setFileMessage] = useState("");
+  const [included, setIncluded] = useState<CompressorName[]>([...COMPRESSORS]);
   const [runId, setRunId] = useState(0);
   const [unit, setUnit] = useState<Unit>("ms");
   const [baseline, setBaseline] = useState<Baseline>("gzip6");
@@ -58,20 +59,44 @@ export default function App() {
   const [view, setView] = useState<"table" | "chart">("table");
   const closeRef = useRef<() => void>(() => {});
 
-  async function runSample(name: string) {
+  // Check the file, then show its chip and a plain preview. Nothing runs until Run is clicked.
+  async function loadFile(f: File, sample: string | null) {
     if (status === "running") return;
-    setActive(name);
+    const check = await validateFile(f);
+    if (!check.ok) {
+      setFileMessage(check.message);
+      return;
+    }
+    setFileMessage("");
+    setMessage("");
+    setActive(sample);
+    setRunId(0);
+    setFile({
+      file: f,
+      entropy: entropyOf(new Uint8Array(await f.arrayBuffer())),
+      text: await f.slice(0, REPLAY_BYTES).text(),
+    });
+  }
+
+  async function loadSample(name: string) {
+    try {
+      await loadFile(await fetchSample(name), name);
+    } catch (err) {
+      setFileMessage(err instanceof Error ? err.message : "Could not load that sample.");
+    }
+  }
+
+  async function run() {
+    if (!file || status === "running" || included.length === 0) return;
     setResults([]);
     setAnalysis(null);
     setMessage("");
     setChangeNote(null);
     setStatus("running");
+    setRunId(1);
     try {
-      const file = await fetchSample(name);
-      setPreview({ text: await file.slice(0, REPLAY_BYTES).text(), bytes: file.size });
-      setRunId((n) => n + 1);
-      const runId = await createRun(file, [...COMPRESSORS]);
-      closeRef.current = openEvents(runId, {
+      const id = await createRun(file.file, included);
+      closeRef.current = openEvents(id, {
         result: (r) => setResults((prev) => [...prev, r]),
         done: (a) => {
           setAnalysis(a);
@@ -88,10 +113,24 @@ export default function App() {
     }
   }
 
+  // Back to the dropbox: clears the file and results, keeps the compressor selection.
+  function tryAnother() {
+    closeRef.current();
+    setFile(null);
+    setActive(null);
+    setResults([]);
+    setAnalysis(null);
+    setMessage("");
+    setFileMessage("");
+    setChangeNote(null);
+    setRunId(0);
+    setStatus("idle");
+  }
+
   const rows = results.filter((r) => !r.is_baseline);
-  const included = [...COMPRESSORS];
   const latest = rows.length ? rows[rows.length - 1] : null;
   const busy = status === "running";
+  const picking = status === "idle" || status === "error";
 
   const cells = analysis?.weissman[unit][baseline] ?? {};
   // Rank by score among rows that have a number (a comparison of precomputed values, no maths).
@@ -119,31 +158,57 @@ export default function App() {
       <main className="mx-auto max-w-[1400px] space-y-3 p-4">
         <header className="flex flex-wrap items-center gap-x-4 gap-y-2">
           <h1 className="text-2xl font-black">Weissman Check</h1>
-          <span className="text-sm font-bold text-muted">Try a sample:</span>
-          <div className="flex flex-wrap gap-2">
-            {SAMPLES.map((s) => (
-              <button
-                key={s.file}
-                disabled={busy}
-                aria-pressed={active === s.file}
-                onClick={() => runSample(s.file)}
-                className={`rounded-xl border-2 border-accent px-3 py-1 text-sm font-bold disabled:opacity-40 ${
-                  active === s.file ? "bg-accent text-white" : "bg-card text-accent"
-                }`}
-              >
-                {s.label}
-              </button>
-            ))}
-          </div>
           {status === "done" && rows.length > 0 && (
-            <span className="ml-auto font-mono text-xs text-muted">
-              Original: {formatSize(rows[0].original_bytes)}
-            </span>
+            <>
+              <span className="font-mono text-xs text-muted">
+                {file?.file.name} · Original: {formatSize(rows[0].original_bytes)}
+              </span>
+              <button
+                onClick={tryAnother}
+                className="ml-auto rounded-xl border-2 border-accent bg-card px-3 py-1 text-sm font-bold text-accent"
+              >
+                Try another file
+              </button>
+            </>
           )}
         </header>
         <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_420px]">
           <div className="min-w-0 space-y-3">
             {message && <p className="text-red-600">{message}</p>}
+            {picking && (
+              <>
+                <Dropbox
+                  onFile={(f) => loadFile(f, null)}
+                  onSample={loadSample}
+                  activeSample={active}
+                  message={fileMessage}
+                />
+                {file && (
+                  <FileChip name={file.file.name} bytes={file.file.size} entropy={file.entropy} />
+                )}
+                <CompressorCarousel
+                  included={included}
+                  onToggle={(c) =>
+                    setIncluded((cur) => (cur.includes(c) ? cur.filter((x) => x !== c) : [...cur, c]))
+                  }
+                  disabled={false}
+                />
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={run}
+                    disabled={!file || included.length === 0}
+                    className="rounded-xl bg-accent px-6 py-2 text-lg font-black text-white disabled:opacity-40"
+                  >
+                    Run
+                  </button>
+                  {included.length === 0 ? (
+                    <span className="text-sm font-bold text-red-600">Pick at least one compressor.</span>
+                  ) : (
+                    !file && <span className="text-sm text-muted">Add a file to run.</span>
+                  )}
+                </div>
+              </>
+            )}
             {busy && (
               <div className="space-y-2 rounded-xl border border-line bg-card p-5">
                 <p className="text-sm font-bold text-muted">
@@ -185,8 +250,8 @@ export default function App() {
           </div>
           <div className="min-w-0 space-y-3">
             <ReplayCard
-              text={preview?.text ?? null}
-              fileBytes={preview?.bytes ?? 0}
+              text={file?.text ?? null}
+              fileBytes={file?.file.size ?? 0}
               runId={runId}
               tall={status === "done"}
             />

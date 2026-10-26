@@ -59,7 +59,7 @@ Build mode: fast
   Learner check: Switch the unit from seconds to milliseconds and back, and tell me one row where the verdict changes; I'll walk through that real row with you.
   Commit: `Add Weissman score and break-it control`
 
-- [ ] **6. Drop your own file, with checks and compressor choice**
+- [x] **6. Drop your own file, with checks and compressor choice**
   Becomes usable: A dropped file is validated (empty, over 25 MB, binary), shows a file chip with the entropy verdict and tooltip, and the carousel lets you include/exclude compressors with narration cards.
   Why now: Samples prove the loop; this makes it work on the learner's real data, which is the success definition.
   PRD ref: `prd.md > File input`, `prd.md > Compressor carousel, selection and narration cards`, `prd.md > States and Boundaries`
@@ -119,3 +119,6 @@ Activity mode: [not started]
 - Results view reworked after check #2 — the 8-column table ran numbers together and the page scrolled at 1440×900, so the table is compact with fixed columns, the Weissman panel moved under the replay card, and the banner has a fixed height.
 - Delivery time chart added (not in the original plan; the learner's request) — a stacked compress/transfer/decompress bar per run that follows the static/dynamic toggle; it sits in a tab beside the table so the view fits without scrolling. `spec.md` (Components, Analysis payload, File Structure) and `prd.md` (results layout, What We're Building) were updated to match; the chart rides on slice 5's results view and needs no new slice.
 - Weissman defaults to milliseconds with the seconds case as the "break it" demo, and its note now appears only after a change and describes it — the original behaviour showed a generic note and a detached reason list.
+- Samples now load the file and show its chip and preview, and a separate Run button starts the benchmark (per the PRD) — slices 1-5 had run a sample the moment it was clicked.
+- Try another file (slice 7) was built in slice 6 because the dropbox had no other way back after a run; it clears the file and results and keeps the compressor selection. Slice 7 keeps downloads, bits per byte and the failure paths.
+- Compressor carousel and narration card sit in the left column under the dropbox, not above the right column — the left column was empty before a run and the right column was already full at 900 px high.
