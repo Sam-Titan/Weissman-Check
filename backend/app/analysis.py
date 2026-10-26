@@ -1,5 +1,6 @@
 """Single source of truth for the answer: pure functions, no I/O."""
 
+import math
 from collections.abc import Callable, Iterable
 
 from .models import (
@@ -9,10 +10,18 @@ from .models import (
     Recommendation,
     RowSummary,
     RowTimes,
+    ScoreCell,
 )
 
 NETWORK_MBPS = 20  # assumed "4G" speed, stated on the banner
 BROWSER_COMPRESSORS = {"gzip", "brotli", "zstd"}
+# Weissman: time units (seconds -> unit) and baselines (the result each score is measured against)
+UNITS = {"s": 1.0, "ms": 1e3, "us": 1e6}
+BASELINES = {
+    "gzip6": ("gzip", "baseline"),
+    "gzip1": ("gzip", "fast"),
+    "zstd3": ("zstd", "baseline"),
+}
 TIE_FRACTION = 0.05  # a runner-up within 5% of the winner's time counts as a near tie
 
 
@@ -75,8 +84,69 @@ def _recommend(rows: list[JobResult], time_fn: Callable[[JobResult], float]) -> 
     )
 
 
+def weissman_cell(r: float, t: float, r_base: float, t_base: float) -> ScoreCell:
+    """W = (r / r_base) * (ln t_base / ln t), natural log, alpha = 1. Never NaN or infinity."""
+
+    def undefined(note: str) -> ScoreCell:
+        return ScoreCell(status="undefined", value=None, note=note)
+
+    if not all(math.isfinite(x) for x in (r, t, r_base, t_base)):
+        return undefined("A time of zero (or less) has no logarithm.")
+    if t <= 0 or t_base <= 0:
+        return undefined("A time of zero (or less) has no logarithm.")
+    if r_base <= 0:
+        return undefined("The baseline produced no compressed output to compare with.")
+    ln_t, ln_base = math.log(t), math.log(t_base)
+    if abs(ln_t) < 1e-12:
+        return undefined("Time equals exactly 1 unit, so the score divides by zero.")
+    if abs(ln_base) < 1e-12:
+        return undefined("Baseline time equals exactly 1 unit, so the score is meaningless.")
+    if (ln_t < 0) != (ln_base < 0):
+        return undefined(
+            "One time is under 1 unit and the other over, so the score would be negative."
+        )
+    value = (r / r_base) * (ln_base / ln_t)
+    if not math.isfinite(value):
+        return undefined("The score overflowed.")
+    if ln_t < 0:
+        return ScoreCell(
+            status="flagged",
+            value=value,
+            note="Times under 1 unit have negative logs, so faster runs score lower here.",
+        )
+    return ScoreCell(status="ok", value=value, note="")
+
+
+def _weissman_tables(
+    rows: list[JobResult], everything: dict[tuple[str, str], JobResult]
+) -> dict[str, dict[str, dict[str, ScoreCell]]]:
+    tables: dict[str, dict[str, dict[str, ScoreCell]]] = {}
+    for unit, factor in UNITS.items():
+        tables[unit] = {}
+        for name, key in BASELINES.items():
+            base = everything.get(key)
+            cells: dict[str, ScoreCell] = {}
+            for row in rows:
+                label = f"{row.compressor}/{row.setting}"
+                if base is None:
+                    cells[label] = ScoreCell(
+                        status="undefined", value=None, note="The baseline run failed."
+                    )
+                    continue
+                cells[label] = weissman_cell(
+                    row.original_bytes / row.compressed_bytes,
+                    row.compress_s * factor,
+                    base.original_bytes / base.compressed_bytes,
+                    base.compress_s * factor,
+                )
+            tables[unit][name] = cells
+    return tables
+
+
 def analyse(results: Iterable[JobResult]) -> Analysis:
+    results = list(results)
     rows = [r for r in results if r.status == "ok" and not r.is_baseline]
+    everything = {(r.compressor, r.setting): r for r in results if r.status == "ok"}
     return Analysis(
         network_mbps=NETWORK_MBPS,
         original_bytes=rows[0].original_bytes if rows else 0,
@@ -86,6 +156,7 @@ def analyse(results: Iterable[JobResult]) -> Analysis:
             )
             for r in rows
         },
+        weissman=_weissman_tables(rows, everything),
         recommendation=Recommendation(
             static=_recommend(rows, static_time),
             dynamic=_recommend(rows, dynamic_time),

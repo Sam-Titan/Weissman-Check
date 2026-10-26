@@ -59,8 +59,16 @@ class Recommendation(BaseModel):
     dynamic: ModeRecommendation
 
 
+class ScoreCell(BaseModel):
+    status: Literal["ok", "flagged", "undefined"]
+    value: float | None
+    note: str  # one line; empty when status is "ok"
+
+
 class Analysis(BaseModel):
     network_mbps: float
     original_bytes: int
     rows: dict[str, RowTimes]  # "compressor/setting" -> time to the user, both modes
+    # weissman[unit][baseline]["compressor/setting"]: all 9 unit x baseline tables, precomputed
+    weissman: dict[str, dict[str, dict[str, ScoreCell]]]
     recommendation: Recommendation

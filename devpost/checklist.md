@@ -49,7 +49,7 @@ Build mode: fast
   Learner check: Run the server-log sample and watch the replay; say whether the highlights and counter explain why the file compressed.
   Commit: `Add LZ-style replay card`
 
-- [ ] **5. Weissman score and the "break it" control**
+- [x] **5. Weissman score and the "break it" control**
   Becomes usable: The results table has a Weissman column; changing the time unit or baseline switches precomputed tables, and undefined/flagged cells explain themselves.
   Why now: Completes the second half of the kernel (does the single score mislead?) and puts the formula edge cases under test while the rest is still small.
   PRD ref: `prd.md > Results: Weissman "break it" control`

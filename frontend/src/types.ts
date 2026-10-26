@@ -43,5 +43,15 @@ export interface Analysis {
   network_mbps: number;
   original_bytes: number;
   rows: Record<string, RowTimes>;
+  weissman: Record<Unit, Record<Baseline, Record<string, ScoreCell>>>;
   recommendation: Record<Mode, ModeRecommendation>;
+}
+
+export type Unit = "s" | "ms" | "us";
+export type Baseline = "gzip6" | "gzip1" | "zstd3";
+
+export interface ScoreCell {
+  status: "ok" | "flagged" | "undefined";
+  value: number | null;
+  note: string;
 }
