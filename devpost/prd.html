@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Weissman Check — PRD</title>
+<style>
+  :root{--bg:#f6f8fa;--card:#fff;--ink:#1f2933;--dim:#667585;--line:#dde3ea;--accent:#1e88e5;
+        --gzip:#1e88e5;--brotli:#fb8c00;--zstd:#00acc1;--lz4:#fdd835;--xz:#8e24aa;--bzip2:#ec407a;--ok:#2e7d32;--warn:#b26a00}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "Source Sans 3",Lato,"Helvetica Neue",Arial,sans-serif}
+  main{max-width:920px;margin:0 auto;padding:32px 16px 72px}
+  h1{font-size:2rem;margin:0 0 4px;font-weight:300}h1 b{color:var(--accent);font-weight:700}
+  h2{font-size:1.2rem;margin:36px 0 10px;font-weight:700}
+  .sub{color:var(--dim);margin:0 0 8px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:16px}
+  code,.mono{font-family:"Source Code Pro","JetBrains Mono",Consolas,monospace;font-size:.88em}
+  .tag{display:inline-block;font-size:.75rem;color:var(--dim);border:1px solid var(--line);border-radius:4px;padding:0 6px;margin-left:6px}
+  .dots{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
+  .dots span{width:12px;height:12px;border-radius:50%}
+  .steps{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+  .steps button,.nav button{font:inherit;border:1px solid var(--line);background:var(--card);border-radius:6px;padding:6px 12px;cursor:pointer}
+  .steps button[aria-selected=true]{background:var(--accent);border-color:var(--accent);color:#fff}
+  .nav{display:flex;gap:8px;margin-top:12px}
+  .nav button{background:var(--accent);border-color:var(--accent);color:#fff}
+  .nav button:disabled{opacity:.4;cursor:default}
+  .step{display:none}.step.on{display:block}
+  .step h3{margin:0 0 6px;font-size:1.05rem}
+  .step ul{margin:6px 0;padding-left:20px}
+  svg{width:100%;height:auto;display:block}
+  svg text{font:13px "Source Sans 3",Lato,Arial,sans-serif;fill:var(--ink)}
+  svg .box{fill:#fff;stroke:var(--line);stroke-width:1.5}
+  svg .hot{stroke:var(--accent);stroke-width:2}
+  svg .arrow{stroke:var(--dim);stroke-width:1.5;fill:none}
+  .wire{display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:.88rem}
+  .wire div{border:1px solid var(--line);border-radius:6px;padding:8px;background:#fff}
+  .wire .full{grid-column:1/-1}.wire .acc{background:var(--accent);color:#fff;border-color:var(--accent)}
+  details{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:8px 14px;margin:8px 0}
+  summary{cursor:pointer;font-weight:700}
+  ul.c{list-style:none;padding-left:0}ul.c li{padding-left:22px;position:relative;margin:4px 0}
+  ul.c li:before{content:"☐";position:absolute;left:0;color:var(--accent)}
+  .now summary{color:var(--ok)}.later summary{color:var(--warn)}.cut summary{color:#b3261e}
+  table{border-collapse:collapse;width:100%;font-size:.92rem}td,th{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+  .exp{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  @media(max-width:620px){.exp,.wire{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main>
+  <h1>Weissman <b>Check</b></h1>
+  <p class="sub">Product requirements — draft for review. Markdown (<code>prd.md</code>) is the canonical version.</p>
+  <div class="dots" aria-label="compressor colours">
+    <span style="background:var(--gzip)" title="gzip"></span><span style="background:var(--brotli)" title="brotli"></span><span style="background:var(--zstd)" title="zstd"></span><span style="background:var(--lz4)" title="lz4"></span><span style="background:var(--xz)" title="xz"></span><span style="background:var(--bzip2)" title="bzip2"></span>
+  </div>
+
+  <h2>Scope said it. Now it's exact.</h2>
+  <div class="exp">
+    <div class="card"><b>Scope said</b><br>"See the results… a recommendation that accounts for static versus dynamic."</div>
+    <div class="card"><b>Now we know</b><br>A one-line banner comes first, with a static/dynamic toggle on it. Flipping it can change the winner on screen. Below it sit a per-row results table and a Weissman "break it" control.</div>
+  </div>
+
+  <h2>The journey</h2>
+  <div class="card">
+    <svg viewBox="0 0 860 150" role="img" aria-label="Journey: hero, compressor page, drop file, choose, run, results, act">
+      <defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#667585"/></marker></defs>
+      <g id="nodes"></g>
+    </svg>
+    <p class="sub" style="margin:8px 0 0">Pick a step below. The highlighted box shows where you are.</p>
+  </div>
+
+  <div class="card" style="margin-top:12px">
+    <div class="steps" role="tablist" id="tabs"></div>
+
+    <div class="step" data-i="0"><h3>1 · Hero</h3>
+      <ul><li>A looping animation of a block of text squeezing into a smaller block.</li><li>App name and a <b>Start</b> button. Nothing else.</li></ul></div>
+
+    <div class="step" data-i="1"><h3>2 · Compressor page, before a file</h3>
+      <div class="wire">
+        <div class="full acc">Narrator box — guided tour (Next / Skip tour)</div>
+        <div>Left: dropbox + 3 sample buttons<br><span class="sub">JSON API response · server log · minified JS</span></div>
+        <div>Right: carousel (6 cards, include checkboxes) + narration card</div>
+        <div>Replay card (square): narrator's intro text</div>
+        <div>Metrics box: metric names greyed out, each with a "?"</div>
+      </div>
+      <p class="sub">Empty state: drag-and-drop text and samples. A refresh always returns here.</p></div>
+
+    <div class="step" data-i="2"><h3>3 · Drop a file</h3>
+      <ul><li>The text appears as a plain preview in the replay card, with nothing highlighted yet.</li><li>A file chip shows name, size and an entropy verdict ("Highly repetitive, worth compressing" / "Already dense, little to gain") with a "?" tooltip.</li>
+      <li><b>Not accepted:</b> binary or image ("handles text-like files for now…"), over 25 MB (limit stated), empty ("nothing to squeeze").</li></ul></div>
+
+    <div class="step" data-i="3"><h3>4 · Choose what to compare</h3>
+      <ul><li>Six carousel cards, each in its own colour, each with an include checkbox. All are checked by default.</li>
+      <li>Reading a card changes the narration card under it. It doesn't change what's included.</li>
+      <li>gzip, brotli, zstd and lz4 explain how they use repeats. xz and bzip2 explain their different approach in words only.</li>
+      <li>No compressor checked: Run is disabled, with "Pick at least one compressor."</li></ul></div>
+
+    <div class="step" data-i="4"><h3>5 · Run</h3>
+      <ul><li>The dropbox area becomes a <b>12-segment progress bar</b>. Each segment fills in its compressor's colour when that run finishes.</li>
+      <li>The replay starts alongside it: a cursor sweeps the text, repeats light up with labels ("repeat of 14 chars from 120 back"), and a "bytes saved so far" counter climbs.</li>
+      <li>The metrics box on the right shows live values and fills in as each segment finishes. After the run, the results table on the left replaces it.</li>
+      <li>One compressor fails: its row says "failed" and the others continue.</li></ul></div>
+
+    <div class="step" data-i="5"><h3>6 · Results appear</h3>
+      <div class="wire">
+        <div class="full acc">Banner: "Ship brotli (strong) for static assets: 78% smaller, decompresses at 410 MB/s" at assumed 4G [static ⇄ dynamic]</div>
+        <div class="full">Best = shortest time to a user. Static: transfer + decompress. Dynamic: compress + transfer + decompress.<br>If the winner is lz4/xz/bzip2: "Fastest to deliver overall: xz (strong). Best for browsers: brotli (strong)."</div>
+        <div class="full">Table: compressor × fast/strong · browser-supported mark · size · % saved · compress speed · decompress speed · Weissman (gzip level 6 baseline) · download</div>
+        <div class="full">Weissman "break it": change the time unit or baseline and watch the ranking change</div>
+      </div>
+      <p class="sub">Results take over the left half automatically. The replay card becomes a tall rectangle and keeps going (Stop / Restart).</p></div>
+
+    <div class="step" data-i="6"><h3>7 · Act</h3>
+      <ul><li>Flip static/dynamic on the banner.</li><li>Download any row's real compressed file.</li><li>Change the Weissman unit or baseline.</li><li><b>Try another file</b> brings the dropbox back and keeps compressor selections.</li></ul></div>
+
+    <div class="nav"><button id="prev">Back</button><button id="next">Next</button></div>
+  </div>
+
+  <h2>Is it done? Checkable criteria</h2>
+  <details open><summary>Narrator and tour</summary><ul class="c"><li>First arrival shows step 1 with Next and Skip tour.</li><li>Skip tour dismisses it and the app stays fully usable.</li></ul></details>
+  <details><summary>File input</summary><ul class="c"><li>Dropped or sample text files show a preview and a file chip with name, size and entropy verdict.</li><li>Binary, oversize and empty files show their friendly message and don't run.</li></ul></details>
+  <details><summary>Benchmark and progress bar</summary><ul class="c"><li>Run benchmarks every included compressor at both settings on the real file.</li><li>12 segments fill as runs finish; unchecked ones show as skipped.</li></ul></details>
+  <details><summary>Replay card</summary><ul class="c"><li>Labelled "How LZ-style compressors see your file (simplified replay)".</li><li>Highlights come from the user's actual file, with length and distance labels.</li><li>Stop and Restart affect only the replay.</li></ul></details>
+  <details><summary>Banner, table and Weissman control</summary><ul class="c"><li>The banner is the first result and names compressor, setting, % saved, decompress speed and the assumed network speed.</li><li>The toggle changes the banner on screen, because compression time counts only in dynamic mode.</li><li>If the winner isn't browser-supported, the banner shows the overall winner and the best browser one.</li><li>The table marks browser-supported compressors (gzip, brotli, zstd).</li><li>Each table row downloads a real compressed file; failed rows say "failed".</li><li>The Weissman control changes the scores and ranking on screen.</li></ul></details>
+
+  <h2>Boundary</h2>
+  <details class="now" open><summary>Building now</summary><ul><li>Hero + compressor page</li><li>Dropbox, 3 samples, preview</li><li>Carousel, include checkboxes, narration cards</li><li>Real benchmark, 6 compressors × 2 settings, segmented progress bar</li><li>Replay card</li><li>Banner, table, Weissman "break it", Try another file</li></ul></details>
+  <details class="later"><summary>Deferred</summary><ul><li>Separate libraries and metrics pages (content lives in narration cards and tooltips)</li><li>Avatar animation</li><li>Per-compressor custom visualizations</li><li>Images and video</li><li>Non-developer audience; deployment</li></ul></details>
+  <details class="cut"><summary>Non-goals</summary><ul><li>Solo mode</li><li>Show branding</li><li>Claiming live compressor internals</li><li>Accounts, saved history, stored uploads</li></ul></details>
+
+  <h2>Look and feel</h2>
+  <div class="card">2013–2015 flat design: bright white and light grey, flat 1px-bordered cards, one blue accent, one colour per compressor used everywhere, a humanist sans with a monospace for numbers and file text, and a single moment of flair in the progress bar.</div>
+
+  <h2>Open questions</h2>
+  <table>
+    <tr><th>Question</th><th>Blocks spec?</th></tr>
+    <tr><td>Other Weissman time units and baselines besides the gzip level 6 default (assumed 2–3 of each)</td><td>No</td></tr>
+    <tr><td>Exact fast/strong levels, narration wording, assumed network speed and entropy thresholds</td><td>No</td></tr>
+    <tr><td>How the tall replay rectangle handles large files (assumed scroll or first portion)</td><td>No</td></tr>
+  </table>
+</main>
+<script>
+(function(){
+  var labels=["Hero","Page","Drop","Choose","Run","Results","Act"];
+  var tabs=document.getElementById("tabs"),steps=[].slice.call(document.querySelectorAll(".step"));
+  var nodes=document.getElementById("nodes"),cur=0,NS="http://www.w3.org/2000/svg";
+  var w=104,gap=22;
+  labels.forEach(function(l,i){
+    var x=i*(w+gap)+4,g=document.createElementNS(NS,"g");
+    g.innerHTML='<rect class="box" id="n'+i+'" x="'+x+'" y="50" width="'+w+'" height="46" rx="6"/><text x="'+(x+w/2)+'" y="78" text-anchor="middle">'+(i+1)+' · '+l+'</text>'+
+      (i<labels.length-1?'<line class="arrow" x1="'+(x+w)+'" y1="73" x2="'+(x+w+gap-2)+'" y2="73" marker-end="url(#a)"/>':'');
+    nodes.appendChild(g);
+    var b=document.createElement("button");b.textContent=(i+1)+" "+l;b.setAttribute("role","tab");
+    b.onclick=function(){show(i)};tabs.appendChild(b);
+  });
+  function show(i){
+    cur=i;
+    steps.forEach(function(s,k){s.classList.toggle("on",k===i)});
+    [].forEach.call(tabs.children,function(b,k){b.setAttribute("aria-selected",k===i)});
+    labels.forEach(function(_,k){document.getElementById("n"+k).setAttribute("class","box"+(k===i?" hot":""))});
+    document.getElementById("prev").disabled=i===0;document.getElementById("next").disabled=i===labels.length-1;
+  }
+  document.getElementById("prev").onclick=function(){show(cur-1)};
+  document.getElementById("next").onclick=function(){show(cur+1)};
+  show(0);
+})();
+</script>
+</body>
+</html>
