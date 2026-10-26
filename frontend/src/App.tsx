@@ -5,6 +5,8 @@ import { entropyOf, type Entropy } from "./lib/entropy";
 import { validateFile } from "./lib/validate";
 import CompressorCarousel from "./components/CompressorCarousel";
 import Dropbox from "./components/Dropbox";
+import Hero from "./components/Hero";
+import NarratorBox from "./components/NarratorBox";
 import FileChip from "./components/FileChip";
 import { formatSize } from "./lib/format";
 import MetricsBox from "./components/MetricsBox";
@@ -43,6 +45,7 @@ function describeChange(what: string, before: Record<string, ScoreCell>, after: 
 }
 
 export default function App() {
+  const [screen, setScreen] = useState<"hero" | "compressor">("hero");
   const [status, setStatus] = useState<Status>("idle");
   const [results, setResults] = useState<JobResult[]>([]);
   const [message, setMessage] = useState("");
@@ -159,6 +162,8 @@ export default function App() {
     setBaseline(b);
   };
 
+  if (screen === "hero") return <Hero onStart={() => setScreen("compressor")} />;
+
   return (
     <TooltipProvider>
       <main className="mx-auto max-w-[1400px] space-y-3 p-4">
@@ -180,6 +185,7 @@ export default function App() {
         </header>
         <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_420px]">
           <div className="min-w-0 space-y-3">
+            <NarratorBox />
             {message && <p className="text-red-600">{message}</p>}
             {picking && (
               <>

@@ -55,3 +55,10 @@ export const NARRATIONS: Record<string, Narration> = {
     body: "Doesn't look for repeats at all. It reshuffles each block of text (the Burrows-Wheeler transform) so similar letters end up side by side, then squeezes those runs. Often small on text, but slow both ways. The replay doesn't apply to it.",
   },
 };
+
+export const TOUR_STEPS = [
+  { title: "Give it a file", text: "Drop a text-like file into the dropbox, or try one of the three samples." },
+  { title: "Pick who races", text: "Read each compressor's card, and tick the ones you want to compare." },
+  { title: "Run it", text: "Press Run. The bar fills as each real compressor finishes, and the replay shows repeats in your file." },
+  { title: "Read the answer", text: "The banner says what to ship, the chart shows where the time goes, and the Weissman panel shows how a single score can mislead." },
+];

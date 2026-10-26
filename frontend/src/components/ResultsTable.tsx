@@ -7,7 +7,7 @@ import Help, { Tip } from "./Tooltip";
 const ZSTD_NOTE = "Supported in Chromium and Firefox; Safari support has lagged.";
 
 // Fixed widths keep the numeric columns from running together.
-const COLS = [150, 60, 52, 52, 62, 70, 62, 84, 52, 44];
+const COLS = [140, 56, 50, 56, 72, 88, 70, 84, 70, 44];
 
 export default function ResultsTable({
   rows,
@@ -35,7 +35,7 @@ export default function ResultsTable({
     isPick(a) ? -1 : isPick(b) ? 1 : total(a) - total(b),
   );
   const head = (label: string, tip?: keyof typeof METRIC_TIPS, left = false) => (
-    <th className={`py-1.5 font-bold ${left ? "pl-3 text-left" : "text-right"}`}>
+    <th className={`whitespace-nowrap py-1.5 font-bold ${left ? "pl-3 text-left" : "text-right"}`}>
       {label}
       {tip && <Help text={METRIC_TIPS[tip]} />}
     </th>

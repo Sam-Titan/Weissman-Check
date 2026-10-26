@@ -79,7 +79,7 @@ Build mode: fast
   Learner check: Download one file from the table and unpack it yourself, then click Try another file.
   Commit: `Add downloads, full results table and Try another file`
 
-- [ ] **8. Narrator tour, hero page and final polish**
+- [x] **8. Narrator tour, hero page and final polish**
   Becomes usable: The app opens on the hero with the squeeze animation and Start, and the narrator box walks through the flow with Next and Skip tour; the look matches the flat 2013–2015 design.
   Why now: Framing last, since it depends on the finished flow it explains.
   PRD ref: `prd.md > Hero page`, `prd.md > Narrator and guided tour`, `prd.md > Look and Feel`
