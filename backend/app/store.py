@@ -13,6 +13,7 @@ TTL_S = 600
 class Run:
     data: bytes
     included: list[str]
+    name: str = "file"  # the uploaded file's name, used for download filenames
     outputs: dict[tuple[str, str], bytes] = field(default_factory=dict)
     created_at: float = field(default_factory=time.monotonic)
     running: bool = False
@@ -35,11 +36,11 @@ class RunStore:
         with self._lock:
             return any(r.running for r in self._runs.values())
 
-    def create(self, data: bytes, included: list[str]) -> str:
+    def create(self, data: bytes, included: list[str], name: str = "file") -> str:
         with self._lock:
             self._prune()
             rid = uuid.uuid4().hex[:12]
-            self._runs[rid] = Run(data, included)
+            self._runs[rid] = Run(data, included, name)
             self._prune()
             return rid
 

@@ -1,5 +1,6 @@
 export const METRIC_TIPS = {
   size: "How many bytes the compressed file takes. Smaller means less to send over the network.",
+  bpb: "Bits per byte: how many bits the compressed file spends on each byte of the original. Compare it with the entropy figure on your file: compressors that use repeated strings can beat it.",
   saved: "How much smaller the compressed file is than the original, as a percentage.",
   compress: "How fast the compressor works, in megabytes of original file per second. Higher is faster.",
   decompress: "How fast a user's device can unpack it, in MB/s of original file. Higher is faster.",

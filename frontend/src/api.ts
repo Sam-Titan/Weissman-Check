@@ -20,6 +20,19 @@ export async function createRun(file: File, compressors: string[]): Promise<stri
   return (await res.json()).run_id;
 }
 
+/** Fetches the stored compressed bytes and hands them to the browser as a file. */
+export async function downloadRun(runId: string, compressor: string, setting: string): Promise<void> {
+  const res = await fetch(`/api/runs/${runId}/download/${compressor}/${setting}`);
+  if (!res.ok) throw new Error("That run expired, run it again.");
+  const name = /filename="([^"]+)"/.exec(res.headers.get("content-disposition") ?? "")?.[1] ?? "download";
+  const url = URL.createObjectURL(await res.blob());
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = name;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 export function openEvents(
   runId: string,
   on: { result: (r: JobResult) => void; done: (analysis: Analysis) => void; lost: () => void },

@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { createRun, fetchSample, openEvents } from "./api";
+import { createRun, downloadRun, fetchSample, openEvents } from "./api";
 import { COMPRESSORS, type CompressorName } from "./lib/compressors";
 import { entropyOf, type Entropy } from "./lib/entropy";
 import { validateFile } from "./lib/validate";
@@ -57,6 +57,8 @@ export default function App() {
   const [baseline, setBaseline] = useState<Baseline>("gzip6");
   const [changeNote, setChangeNote] = useState<string | null>(null);
   const [view, setView] = useState<"table" | "chart">("table");
+  const [serverRun, setServerRun] = useState<string | null>(null);
+  const [downloadMessage, setDownloadMessage] = useState("");
   const closeRef = useRef<() => void>(() => {});
 
   // Check the file, then show its chip and a plain preview. Nothing runs until Run is clicked.
@@ -92,10 +94,12 @@ export default function App() {
     setAnalysis(null);
     setMessage("");
     setChangeNote(null);
+    setDownloadMessage("");
     setStatus("running");
     setRunId(1);
     try {
       const id = await createRun(file.file, included);
+      setServerRun(id);
       closeRef.current = openEvents(id, {
         result: (r) => setResults((prev) => [...prev, r]),
         done: (a) => {
@@ -123,6 +127,8 @@ export default function App() {
     setMessage("");
     setFileMessage("");
     setChangeNote(null);
+    setDownloadMessage("");
+    setServerRun(null);
     setRunId(0);
     setStatus("idle");
   }
@@ -240,8 +246,23 @@ export default function App() {
                     </button>
                   ))}
                 </div>
+                {downloadMessage && <p className="text-sm font-bold text-red-600">{downloadMessage}</p>}
                 {view === "table" ? (
-                  <ResultsTable rows={rows} mode={mode} analysis={analysis} cells={cells} ranked={ranked} />
+                  <ResultsTable
+                    rows={rows}
+                    mode={mode}
+                    analysis={analysis}
+                    cells={cells}
+                    ranked={ranked}
+                    onDownload={async (r) => {
+                      setDownloadMessage("");
+                      try {
+                        if (serverRun) await downloadRun(serverRun, r.compressor, r.setting);
+                      } catch (err) {
+                        setDownloadMessage(err instanceof Error ? err.message : "Download failed.");
+                      }
+                    }}
+                  />
                 ) : (
                   <DeliveryChart analysis={analysis} mode={mode} />
                 )}

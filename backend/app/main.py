@@ -6,10 +6,17 @@ from pathlib import Path
 from typing import Annotated
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.responses import FileResponse, Response, StreamingResponse
 
 from .analysis import analyse
-from .benchmark import BASELINE_KEYS, CODECS, COMPRESSORS, plan_jobs, run_benchmark
+from .benchmark import (
+    BASELINE_KEYS,
+    CODECS,
+    COMPRESSORS,
+    EXTENSIONS,
+    plan_jobs,
+    run_benchmark,
+)
 from .models import JobId, RunCreated
 from .store import store
 
@@ -38,7 +45,7 @@ async def create_run(
         raise HTTPException(413, "Files are limited to 25 MB.")
     if not data:
         raise HTTPException(422, "This file is empty, nothing to squeeze.")
-    run_id = store.create(data, included)
+    run_id = store.create(data, included, Path(file.filename or "file").name)
     jobs = plan_jobs(included)
     return RunCreated(
         run_id=run_id,
@@ -98,6 +105,20 @@ def run_events(run_id: str) -> StreamingResponse:
         stream(),
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
+
+
+@app.get("/api/runs/{run_id}/download/{compressor}/{setting}")
+def download(run_id: str, compressor: str, setting: str) -> Response:
+    run = store.get(run_id)
+    out = run.outputs.get((compressor, setting)) if run else None
+    if run is None or out is None or compressor not in EXTENSIONS:
+        raise HTTPException(404, "That run expired, run it again.")
+    filename = f"{run.name}.{EXTENSIONS[compressor]}"
+    return Response(
+        out,
+        media_type="application/octet-stream",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
 
 

@@ -7,7 +7,7 @@ import Help, { Tip } from "./Tooltip";
 const ZSTD_NOTE = "Supported in Chromium and Firefox; Safari support has lagged.";
 
 // Fixed widths keep the numeric columns from running together.
-const COLS = [150, 64, 58, 66, 74, 70, 84, 66];
+const COLS = [150, 60, 52, 52, 62, 70, 62, 84, 52, 44];
 
 export default function ResultsTable({
   rows,
@@ -15,14 +15,25 @@ export default function ResultsTable({
   analysis,
   cells,
   ranked,
+  onDownload,
 }: {
   rows: JobResult[];
   mode: Mode;
   analysis: Analysis;
   cells: Record<string, ScoreCell>;
   ranked: string[];
+  onDownload: (r: JobResult) => void;
 }) {
   const rec = analysis.recommendation[mode];
+  // Fastest to the user first for the current mode (the pick leads when two are tied); failed runs last.
+  const total = (r: JobResult) => {
+    const t = analysis.rows[`${r.compressor}/${r.setting}`];
+    return t ? (mode === "static" ? t.static_s : t.dynamic_s) : Infinity;
+  };
+  const isPick = (r: JobResult) => rec.winner?.compressor === r.compressor && rec.winner.setting === r.setting;
+  const ordered = [...rows].sort((a, b) =>
+    isPick(a) ? -1 : isPick(b) ? 1 : total(a) - total(b),
+  );
   const head = (label: string, tip?: keyof typeof METRIC_TIPS, left = false) => (
     <th className={`py-1.5 font-bold ${left ? "pl-3 text-left" : "text-right"}`}>
       {label}
@@ -42,15 +53,17 @@ export default function ResultsTable({
             {head("Compressor", undefined, true)}
             {head("Size KB", "size")}
             {head("Saved", "saved")}
+            {head("Bits/B", "bpb")}
             {head("Comp MB/s", "compress")}
             {head("Decomp MB/s", "decompress")}
             {head("To user", "time")}
             {head("Weissman", "weissman")}
-            <th className="py-1.5 pr-3 text-right font-bold">Browser</th>
+            <th className="py-1.5 text-right font-bold">Browser</th>
+            <th className="py-1.5 pr-3 text-right font-bold">Get</th>
           </tr>
         </thead>
         <tbody className="font-mono">
-          {rows.map((r) => {
+          {ordered.map((r) => {
             const key = `${r.compressor}/${r.setting}`;
             const color = COLORS[r.compressor as CompressorName];
             const isWinner = rec.winner && `${rec.winner.compressor}/${rec.winner.setting}` === key;
@@ -85,8 +98,12 @@ export default function ResultsTable({
                   {r.compressor} ({r.setting})
                 </td>
                 {r.status === "failed" ? (
-                  <td colSpan={7} className="text-right">
-                    failed
+                  <td colSpan={9} className="pr-3 text-right">
+                    <Tip text={r.error ?? "This run failed."}>
+                      <span className="rounded-full bg-line px-2 py-0.5 font-sans text-xs font-bold text-red-600">
+                        failed
+                      </span>
+                    </Tip>
                   </td>
                 ) : (
                   <>
@@ -94,14 +111,26 @@ export default function ResultsTable({
                     <td className="text-right">
                       {((1 - r.compressed_bytes / r.original_bytes) * 100).toFixed(1)}%
                     </td>
+                    <td className="text-right">
+                      {((r.compressed_bytes * 8) / r.original_bytes).toFixed(2)}
+                    </td>
                     <td className="text-right">{(r.original_bytes / 1e6 / r.compress_s).toFixed(1)}</td>
                     <td className="text-right">{(r.original_bytes / 1e6 / r.decompress_s).toFixed(1)}</td>
                     <td className="text-right font-semibold">{time === null ? "…" : formatTime(time)}</td>
                     <td className="text-right" data-testid="weissman-cell">
                       <ScoreView score={cells[key]} rank={ranked.indexOf(key) + 1} />
                     </td>
-                    <td className="pr-3 text-right">
+                    <td className="text-right">
                       <BrowserCell compressor={r.compressor} />
+                    </td>
+                    <td className="pr-3 text-right">
+                      <button
+                        onClick={() => onDownload(r)}
+                        aria-label={`Download ${r.compressor} (${r.setting})`}
+                        className="rounded px-1 font-sans font-bold text-accent hover:bg-accent/10"
+                      >
+                        ⬇
+                      </button>
                     </td>
                   </>
                 )}

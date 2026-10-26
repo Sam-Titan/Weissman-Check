@@ -69,7 +69,7 @@ Build mode: fast
   Learner check: Drop one of your own text files and one image, uncheck two compressors, run, and say what you see.
   Commit: `Accept your own files with validation, entropy verdict and compressor selection`
 
-- [ ] **7. Downloads, full table, and Try another file**
+- [x] **7. Downloads, full table, and Try another file**
   Becomes usable: The table has bits per byte, browser-supported markers, "?" tooltips, failed rows, and a download button that returns the real compressed bytes; Try another file resets while keeping selections.
   Why now: Closes the Act step of the core journey and the remaining error paths (expired run, failed job).
   PRD ref: `prd.md > Results: table`, `prd.md > Try another file`
