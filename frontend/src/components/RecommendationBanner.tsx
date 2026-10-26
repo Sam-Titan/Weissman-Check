@@ -19,26 +19,26 @@ export default function RecommendationBanner({
 }) {
   const { winner, browser_best } = analysis.recommendation[mode];
   return (
-    <section className="rounded-xl bg-accent p-5 text-white">
+    <section className="rounded-xl bg-deep p-6 text-white">
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-1">
           {winner ? (
             <>
-              <p className="text-xl font-bold">
+              <p className="text-2xl font-black leading-snug tracking-tight">
                 Ship {name(winner)} for {MODE_NOTE[mode]}: {winner.percent_saved.toFixed(0)}%
                 smaller, decompresses at {winner.decompress_mbps.toFixed(0)} MB/s
               </p>
               {browser_best && browser_best.compressor !== winner.compressor ? (
-                <p>
+                <p className="text-lg font-bold text-white/90">
                   Fastest to deliver overall: {name(winner)}. Best for browsers:{" "}
                   {name(browser_best)}.
                 </p>
               ) : null}
             </>
           ) : (
-            <p className="text-xl font-bold">Every compressor failed on this file.</p>
+            <p className="text-2xl font-black">Every compressor failed on this file.</p>
           )}
-          <p className="text-sm opacity-80">
+          <p className="text-sm font-bold text-white/70">
             Fastest means shortest time to reach a user at {analysis.network_mbps} Mbit/s.
           </p>
         </div>
@@ -52,7 +52,7 @@ export default function RecommendationBanner({
             <ToggleGroup.Item
               key={m}
               value={m}
-              className="px-3 py-1 font-bold capitalize data-[state=on]:bg-white data-[state=on]:text-accent"
+              className="px-4 py-1.5 font-black capitalize data-[state=on]:bg-white data-[state=on]:text-deep"
             >
               {m}
             </ToggleGroup.Item>

@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "@fontsource/lato/400.css";
 @import "@fontsource/lato/700.css";
+@import "@fontsource/lato/900.css";
 @import "@fontsource/source-code-pro/400.css";
 @import "@fontsource/source-code-pro/600.css";
 
@@ -13,6 +14,7 @@
   --color-ink: #1f2933;
   --color-muted: #7b8794;
   --color-accent: #1e88ff;
+  --color-deep: #0a2f7a;
   --color-gzip: #2f80ed;
   --color-brotli: #f2994a;
   --color-zstd: #1abc9c;
