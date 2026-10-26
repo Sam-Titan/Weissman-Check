@@ -1,4 +1,6 @@
 import json
+import queue
+import threading
 from collections.abc import Iterator
 from pathlib import Path
 from typing import Annotated
@@ -12,6 +14,7 @@ from .models import JobId, RunCreated
 from .store import store
 
 MAX_BYTES = 25 * 1024 * 1024
+PING_EVERY_S = 2.0
 SAMPLES_DIR = Path(__file__).parent / "samples"
 
 app = FastAPI(title="Weissman Check")
@@ -58,16 +61,38 @@ def run_events(run_id: str) -> StreamingResponse:
 
     def stream() -> Iterator[str]:
         run.running = True
-        results = []
+        events: queue.Queue[tuple[str, object] | None] = queue.Queue()
+
+        def work() -> None:
+            results = []
+            try:
+                for result, out in run_benchmark(run.data, run.included):
+                    if run.cancelled:
+                        return
+                    results.append(result)
+                    if out is not None:
+                        run.outputs[(result.compressor, result.setting)] = out
+                    events.put(("result", result.model_dump()))
+                events.put(("done", analyse(results).model_dump()))
+            except Exception as exc:  # surface unexpected failures instead of hanging the stream
+                events.put(("error", {"message": str(exc) or type(exc).__name__}))
+            finally:
+                run.running = False
+                events.put(None)
+
+        threading.Thread(target=work, daemon=True).start()
         try:
-            for result, out in run_benchmark(run.data, run.included):
-                results.append(result)
-                if out is not None:
-                    run.outputs[(result.compressor, result.setting)] = out
-                yield _sse("result", result.model_dump())
-            yield _sse("done", analyse(results).model_dump())
+            while True:
+                try:
+                    item = events.get(timeout=PING_EVERY_S)
+                except queue.Empty:
+                    yield _sse("ping", {})  # lets the browser tell "slow job" from "dead server"
+                    continue
+                if item is None:
+                    break
+                yield _sse(*item)
         finally:
-            run.running = False
+            run.cancelled = True  # the browser left; stop after the current job
 
     return StreamingResponse(
         stream(),

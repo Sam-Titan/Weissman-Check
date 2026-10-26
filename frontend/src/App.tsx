@@ -2,7 +2,11 @@ import { useRef, useState } from "react";
 import { createRun, fetchSample, openEvents } from "./api";
 import { BROWSER_SUPPORTED, COLORS, COMPRESSORS, type CompressorName } from "./lib/compressors";
 import { formatSize, formatTime } from "./lib/format";
+import MetricsBox from "./components/MetricsBox";
+import ProgressBar from "./components/ProgressBar";
 import RecommendationBanner from "./components/RecommendationBanner";
+import Help, { TooltipProvider } from "./components/Tooltip";
+import { METRIC_TIPS } from "./content/narration";
 import type { Analysis, JobResult, Mode } from "./types";
 
 const SAMPLES = [
@@ -50,57 +54,80 @@ export default function App() {
   }
 
   const rows = results.filter((r) => !r.is_baseline);
+  const included = [...COMPRESSORS];
+  const latest = rows.length ? rows[rows.length - 1] : null;
+  const busy = status === "running";
+
+  const head = (label: string, tip: keyof typeof METRIC_TIPS) => (
+    <th>
+      {label}
+      <Help text={METRIC_TIPS[tip]} />
+    </th>
+  );
 
   return (
-    <main className="mx-auto max-w-4xl space-y-6 p-8">
-      <h1 className="text-3xl font-bold">Weissman Check</h1>
-      <div className="flex gap-3">
-        {SAMPLES.map((s) => (
-          <button
-            key={s.file}
-            disabled={status === "running"}
-            aria-pressed={active === s.file}
-            onClick={() => runSample(s.file)}
-            className={`rounded-xl border-2 border-accent px-4 py-2 font-bold disabled:opacity-40 ${
-              active === s.file ? "bg-accent text-white" : "bg-card text-accent"
-            }`}
-          >
-            {s.label}
-          </button>
-        ))}
-      </div>
-      {message && <p className="text-red-600">{message}</p>}
-      {status === "running" && <p className="text-muted">Running… {rows.length} results in</p>}
-      {analysis && <RecommendationBanner analysis={analysis} mode={mode} onMode={setMode} />}
-      {rows.length > 0 && (
-        <p className="font-mono text-sm text-muted">Original: {formatSize(rows[0].original_bytes)}</p>
-      )}
-      {rows.length > 0 && (
-        <table className="w-full rounded-xl border border-line bg-card text-left">
-          <thead className="text-sm text-muted">
-            <tr className="[&>th]:pr-4">
-              <th className="p-3">Compressor</th>
-              <th>Size (KB)</th>
-              <th>% saved</th>
-              <th>Compress MB/s</th>
-              <th>Decompress MB/s</th>
-              <th>Time to user ({mode})</th>
-              <th>Browser</th>
-            </tr>
-          </thead>
-          <tbody className="font-mono">
-            {rows.map((r) => (
-              <Row
-                key={`${r.compressor}-${r.setting}`}
-                r={r}
-                mode={mode}
-                analysis={analysis}
-              />
-            ))}
-          </tbody>
-        </table>
-      )}
-    </main>
+    <TooltipProvider>
+      <main className="mx-auto max-w-6xl space-y-6 p-8">
+        <h1 className="text-3xl font-bold">Weissman Check</h1>
+        <div className="grid items-start gap-6 lg:grid-cols-[3fr_2fr]">
+          <div className="min-w-0 space-y-6">
+            <div className="flex flex-wrap gap-3">
+              {SAMPLES.map((s) => (
+                <button
+                  key={s.file}
+                  disabled={busy}
+                  aria-pressed={active === s.file}
+                  onClick={() => runSample(s.file)}
+                  className={`rounded-xl border-2 border-accent px-4 py-2 font-bold disabled:opacity-40 ${
+                    active === s.file ? "bg-accent text-white" : "bg-card text-accent"
+                  }`}
+                >
+                  {s.label}
+                </button>
+              ))}
+            </div>
+            {message && <p className="text-red-600">{message}</p>}
+            {busy && (
+              <div className="space-y-2 rounded-xl border border-line bg-card p-5">
+                <p className="text-sm font-bold text-muted">
+                  Running real compressors… {rows.length} of 12 done
+                </p>
+                <ProgressBar included={included} results={results} running={busy} />
+              </div>
+            )}
+            {status === "done" && analysis && (
+              <>
+                <RecommendationBanner analysis={analysis} mode={mode} onMode={setMode} />
+                <p className="font-mono text-sm text-muted">
+                  Original: {formatSize(rows[0].original_bytes)}
+                </p>
+                <div className="overflow-x-auto rounded-xl border border-line bg-card">
+                  <table className="w-full text-left">
+                    <thead className="text-sm text-muted">
+                      <tr className="[&>th]:pr-4">
+                        <th className="p-3">Compressor</th>
+                        {head("Size (KB)", "size")}
+                        {head("% saved", "saved")}
+                        {head("Compress MB/s", "compress")}
+                        {head("Decompress MB/s", "decompress")}
+                        {head(`Time to user (${mode})`, "time")}
+                        <th>Browser</th>
+                      </tr>
+                    </thead>
+                    <tbody className="font-mono">
+                      {rows.map((r) => (
+                        <Row key={`${r.compressor}-${r.setting}`} r={r} mode={mode} analysis={analysis} />
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            )}
+          </div>
+          {status !== "done" && <MetricsBox latest={busy ? latest : null} />}
+        </div>
+      </main>
+    </TooltipProvider>
   );
 }
 

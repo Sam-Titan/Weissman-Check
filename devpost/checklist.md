@@ -29,7 +29,7 @@ Build mode: fast
   Learner check: Run a sample, read the banner, press static/dynamic and say whether the answer changes and whether the reason makes sense to you.
   Commit: `Add recommendation banner with static/dynamic flip`
 
-- [ ] **3. Live 12-segment progress bar and metrics box**
+- [x] **3. Live 12-segment progress bar and metrics box**
   Becomes usable: While a run is in progress, the segmented bar fills one coloured segment per finished job and a metrics box updates live; Run is blocked until the run finishes; results replace the dropbox area when done.
   Why now: Delivers the app's one flourish and the compressor colours, which the later pieces reuse.
   PRD ref: `prd.md > The benchmark and progress bar`, `prd.md > Compressor page — during/after a run`
@@ -114,3 +114,5 @@ Activity mode: [not started]
 ## Revisions
 - Large-file worst case kept at current levels — measured a 24 MB log at about 175 s total (brotli 11: 86 s, xz 9: 35 s, zstd 19: 32 s), so the >8 MB hint will say it can take a few minutes rather than a minute; the lower-strong-level fallback is not needed.
 - Playwright MCP could not find Chrome here, so browser checks use the Playwright library with its own Chromium from a scratch script instead.
+- Added a 2-second `ping` event and a browser-side stall watchdog — behind the Vite proxy a killed server leaves the event stream hanging without any error, so "Lost connection" never showed; the benchmark now also runs in a worker thread so pings flow during slow jobs, and it stops after the current job if the browser leaves.
+- Banner and table gained near-tie handling, a time-to-user column, selected-sample state and browser-column marks after early feedback (check #1) — near-ties (brotli vs zstd within about 1 ms) could flip between runs.

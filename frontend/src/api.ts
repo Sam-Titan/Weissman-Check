@@ -1,5 +1,7 @@
 import type { Analysis, JobResult } from "./types";
 
+const STALL_MS = 8000;
+
 export async function fetchSample(name: string): Promise<File> {
   const res = await fetch(`/api/samples/${name}`);
   if (!res.ok) throw new Error("Could not load that sample.");
@@ -24,17 +26,42 @@ export function openEvents(
 ): () => void {
   const source = new EventSource(`/api/runs/${runId}/events`);
   let finished = false;
-  source.addEventListener("result", (e) => on.result(JSON.parse((e as MessageEvent).data)));
-  source.addEventListener("done", (e) => {
+  // The server pings every 2 s even during a slow job, so silence means the stream is dead.
+  // (A dead server behind the Vite proxy leaves the connection hanging without an error.)
+  let watchdog: ReturnType<typeof setTimeout>;
+  const stop = () => {
     finished = true;
+    clearTimeout(watchdog);
     source.close();
-    on.done(JSON.parse((e as MessageEvent).data));
-  });
-  source.onerror = () => {
+  };
+  const lose = () => {
     if (!finished) {
-      source.close();
+      stop();
       on.lost();
     }
   };
-  return () => source.close();
+  const alive = () => {
+    clearTimeout(watchdog);
+    watchdog = setTimeout(lose, STALL_MS);
+  };
+  alive();
+  source.addEventListener("ping", alive);
+  source.addEventListener("result", (e) => {
+    alive();
+    on.result(JSON.parse((e as MessageEvent).data));
+  });
+  source.addEventListener("done", (e) => {
+    stop();
+    on.done(JSON.parse((e as MessageEvent).data));
+  });
+  source.addEventListener("error", (e) => {
+    // A server-sent "error" event carries data; a connection error does not.
+    if ((e as MessageEvent).data) {
+      stop();
+      on.lost();
+    } else {
+      lose();
+    }
+  });
+  return stop;
 }

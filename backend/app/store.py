@@ -16,6 +16,7 @@ class Run:
     outputs: dict[tuple[str, str], bytes] = field(default_factory=dict)
     created_at: float = field(default_factory=time.monotonic)
     running: bool = False
+    cancelled: bool = False  # set when the browser disconnects mid-run
 
 
 class RunStore:
