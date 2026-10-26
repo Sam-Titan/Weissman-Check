@@ -1,0 +1,28 @@
+@import "tailwindcss";
+@import "@fontsource/lato/400.css";
+@import "@fontsource/lato/700.css";
+@import "@fontsource/source-code-pro/400.css";
+@import "@fontsource/source-code-pro/600.css";
+
+@theme {
+  --font-sans: "Lato", system-ui, sans-serif;
+  --font-mono: "Source Code Pro", ui-monospace, monospace;
+  --color-page: #f7f8fa;
+  --color-card: #ffffff;
+  --color-line: #e3e7ed;
+  --color-ink: #1f2933;
+  --color-muted: #7b8794;
+  --color-accent: #1e88ff;
+  --color-gzip: #2f80ed;
+  --color-brotli: #f2994a;
+  --color-zstd: #1abc9c;
+  --color-lz4: #f2c94c;
+  --color-xz: #9b51e0;
+  --color-bzip2: #eb5c9a;
+}
+
+body {
+  background: var(--color-page);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}

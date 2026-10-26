@@ -9,7 +9,7 @@ Build mode: fast
 
 ## Slices
 
-- [ ] **1. Click a sample, get a real benchmark table**
+- [x] **1. Click a sample, get a real benchmark table**
   Becomes usable: A running app (`just dev`) where clicking a sample file runs all six compressors at fast and strong on the server, streams each result over SSE, and shows them in a plain table (size, % saved, compress/decompress MB/s).
   Why now: Retires the biggest unknowns first: library installs, SSE through the Vite proxy, and worst-case timing on a 25 MB file. Every later slice reads these results.
   PRD ref: `prd.md > The Core Journey` (steps 3, 5), `prd.md > The benchmark and progress bar`
@@ -112,4 +112,5 @@ Reflection: [not started]
 Activity mode: [not started]
 
 ## Revisions
-
+- Large-file worst case kept at current levels — measured a 24 MB log at about 175 s total (brotli 11: 86 s, xz 9: 35 s, zstd 19: 32 s), so the >8 MB hint will say it can take a few minutes rather than a minute; the lower-strong-level fallback is not needed.
+- Playwright MCP could not find Chrome here, so browser checks use the Playwright library with its own Chromium from a scratch script instead.
